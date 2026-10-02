@@ -2,7 +2,7 @@
 
 {{-- Page title --}}
 @section('title')
-    Track Cepat Aset IT
+    Track Cepat Aset IT & Komponen
     @parent
 @stop
 
@@ -146,6 +146,62 @@
     padding: 18px 12px !important;
     background-color: #fff5f5 !important;
 }
+/* Mode Filter Switcher */
+.mode-pills-container {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.mode-pill-btn {
+    background: #edf2f7;
+    color: #4a5568;
+    border: 1px solid #cbd5e0;
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.mode-pill-btn:hover {
+    background: #e2e8f0;
+    color: #2d3748;
+}
+.mode-pill-btn.active {
+    background: #2c3e50;
+    color: #ffffff;
+    border-color: #2c3e50;
+    box-shadow: 0 2px 4px rgba(44,62,80,0.25);
+}
+/* Bento KPI Component */
+.bento-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    padding: 14px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+.bento-kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+.bento-kpi-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+.bento-kpi-val {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+}
 /* Modal Guidance Styling */
 .modal-guide-step {
     display: flex;
@@ -186,28 +242,46 @@
         <div class="track-card">
             <div class="track-card-header">
                 <h3 class="track-card-title">
-                    <i class="fa fa-crosshairs"></i> Track Cepat Aset IT <span class="label label-info" style="font-size: 11px; margin-left: 8px; font-weight: normal; background-color: #2980b9 !important;"><i class="fa fa-code-fork"></i> v1.9.16 &bull; Update: 2026-09-15 15:20 WIB</span>
+                    <i class="fa fa-crosshairs"></i> Track Cepat Aset IT & Komponen <span class="label label-info" style="font-size: 11px; margin-left: 8px; font-weight: normal; background-color: #2980b9 !important;"><i class="fa fa-code-fork"></i> v1.9.17 &bull; Update: 2026-10-02 12:45 WIB</span>
                 </h3>
                 <button type="button" class="btn btn-guide-modal" data-toggle="modal" data-target="#modal-panduan-track-cepat">
                     <i class="fa fa-book"></i> Panduan & Alur Kerja
                 </button>
             </div>
             <div class="box-body" style="padding: 16px; background-color: #fdfdfd;">
-                <p style="margin-bottom: 12px; color: #596275; font-size: 14px;">
-                    Masukkan <strong>Kode Barang / Asset Tag</strong>, <strong>Kode BS</strong> (Contoh: <code>BS-0814</code> / <code>BS-0835</code>), <strong>No. FAH</strong> (Contoh: <code>10//F-AH</code>), <strong>Serial Number</strong>, atau <strong>Nama Aset</strong> untuk melacak detail 4 Seksi Terpadu.
+                
+                <!-- Filter Mode Pills -->
+                <div class="mode-pills-container">
+                    <span style="font-size: 13px; font-weight: 700; color: #4a5568; align-self: center; margin-right: 4px;">Target Pencarian:</span>
+                    <button type="button" class="mode-pill-btn active" data-mode="all"><i class="fa fa-globe"></i> Semua (Auto-Detect)</button>
+                    <button type="button" class="mode-pill-btn" data-mode="asset"><i class="fa fa-desktop"></i> Khusus Aset IT</button>
+                    <button type="button" class="mode-pill-btn" data-mode="component"><i class="fa fa-puzzle-piece"></i> Khusus Komponen (COM-...)</button>
+                </div>
+
+                <p style="margin-bottom: 12px; color: #596275; font-size: 13.5px;">
+                    Masukkan <strong>Kode Barang / Tag Aset</strong>, <strong>Kode Komponen</strong> (Contoh: <code>COM-260827001</code> / Serial RAM/SSD), <strong>Kode BS</strong> (Contoh: <code>BS-0814</code>), <strong>No. FAH</strong> (Contoh: <code>10//F-AH</code>), atau <strong>No. SJ</strong>.
                 </p>
 
                 <!-- Search Input Form -->
                 <form id="form-track-cepat" onsubmit="return false;">
                     <div class="input-group input-group-lg">
-                        <input type="text" id="track-input" class="form-control" placeholder="Scan Barcode / Ketik Kode Barang, Kode BS (Contoh: BS-0814), No. FAH (Contoh: 10//F-AH), Serial, atau Nama..." autocomplete="off" style="font-size: 15px; height: 46px; border-radius: 4px 0 0 4px; border: 1px solid #ced4da;">
+                        <input type="text" id="track-input" class="form-control" placeholder="Scan Barcode / Ketik Tag Aset (PBM-...), Kode Komponen (COM-...), No. BS, No. FAH, atau Serial..." autocomplete="off" style="font-size: 15px; height: 46px; border-radius: 4px 0 0 4px; border: 1px solid #ced4da;">
                         <span class="input-group-btn">
                             <button type="button" id="btn-do-track" class="btn btn-primary btn-flat" style="height: 46px; padding: 0 24px; font-size: 15px; font-weight: 600; background-color: #2c3e50; border-color: #2c3e50;">
-                                <i class="fa fa-search"></i> Cari Aset
+                                <i class="fa fa-search"></i> Lacak Sekarang
                             </button>
                         </span>
                     </div>
                 </form>
+
+                <!-- Quick Examples Chips -->
+                <div style="margin-top: 10px; font-size: 12px; color: #64748b;">
+                    <i class="fa fa-lightbulb-o text-warning"></i> <strong>Contoh Pencarian Cepat:</strong>
+                    <a href="javascript:void(0);" class="quick-chip" data-q="PBM-250416001" style="margin-left: 5px; color: #2980b9; text-decoration: underline;">PBM-250416001</a> &bull;
+                    <a href="javascript:void(0);" class="quick-chip" data-q="COM-260921001" style="color: #27ae60; text-decoration: underline; font-weight: bold;">COM-260921001 (Komponen)</a> &bull;
+                    <a href="javascript:void(0);" class="quick-chip" data-q="BS-0814" style="color: #d35400; text-decoration: underline;">BS-0814</a> &bull;
+                    <a href="javascript:void(0);" class="quick-chip" data-q="10//F-AH" style="color: #8e44ad; text-decoration: underline;">10//F-AH</a>
+                </div>
             </div>
         </div>
 
@@ -219,9 +293,9 @@
         <!-- Default Empty State Placeholder -->
         <div id="track-empty-placeholder" class="track-card" style="text-align: center; padding: 40px 20px;">
             <i class="fa fa-barcode" style="font-size: 54px; margin-bottom: 12px; color: #a5b1c2;"></i>
-            <h4 style="color: #4b6584; font-weight: 700; margin-bottom: 6px;">Siap Mengidentifikasi Kode Barang / Aset IT</h4>
-            <p style="color: #778ca3; max-width: 500px; margin: 0 auto; font-size: 13px;">
-                Gunakan kolom pencarian di atas atau scan barcode untuk menampilkan data komprehensif Snipe-IT, FAH, BS, dan Histori Log.
+            <h4 style="color: #4b6584; font-weight: 700; margin-bottom: 6px;">Siap Mengidentifikasi Tag Aset IT & Kode Komponen</h4>
+            <p style="color: #778ca3; max-width: 550px; margin: 0 auto; font-size: 13px;">
+                Gunakan kolom pencarian di atas atau scan barcode untuk menampilkan data komprehensif Aset IT (FAH, BS, SJ, Histori) atau Kartu Stok Komponen (Unit Penampung & Mutasi).
             </p>
         </div>
     </div>
@@ -234,15 +308,15 @@
             <div class="modal-header" style="background-color: #2c3e50; color: #ffffff; padding: 14px 20px;">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: #fff; opacity: 0.9;"><span aria-hidden="true">&times;</span></button>
                 <h4 class="modal-title" id="modalPanduanLabel" style="font-weight: 700; font-size: 17px;">
-                    <i class="fa fa-map-signs text-info"></i> Panduan Penggunaan & Alur Kerja Fitur Track Cepat <span class="label label-primary" style="font-size: 11px; font-weight: normal; margin-left: 5px;"><i class="fa fa-tag"></i> v1.9.16</span>
+                    <i class="fa fa-map-signs text-info"></i> Panduan Penggunaan & Alur Kerja Fitur Track Cepat <span class="label label-primary" style="font-size: 11px; font-weight: normal; margin-left: 5px;"><i class="fa fa-tag"></i> v1.9.17</span>
                 </h4>
             </div>
             <div class="modal-body" style="padding: 24px; background-color: #fcfcfc;">
                 
                 <div style="background-color: #eef2f7; border-left: 4px solid #3498db; padding: 12px 16px; border-radius: 4px; margin-bottom: 24px;">
-                    <strong style="color: #2c3e50; font-size: 14px;"><i class="fa fa-lightbulb-o text-warning"></i> Apa itu Modul Track Cepat?</strong>
+                    <strong style="color: #2c3e50; font-size: 14px;"><i class="fa fa-lightbulb-o text-warning"></i> Apa itu Modul Track Cepat Terpadu?</strong>
                     <p style="margin-top: 4px; margin-bottom: 0; color: #4a5568; font-size: 13px;">
-                        Modul Track Cepat adalah fitur pencarian terpadu di Snipe-IT yang memungkinkan teknisi & auditor melacak histori lengkap siklus hidup aset IT (Data Sistem, Spek FAH, Berita Acara BS, dan Action Logs) secara otomatis dalam 1 tampilan halaman.
+                        Modul Track Cepat adalah mesin pelacak terpadu 1-pintu di Snipe-IT untuk menelusuri seluruh siklus hidup <strong>Aset Hardware</strong> (Data Fisik, FAH, Komponen Terpasang, Berita Acara BS, Surat Jalan, dan Log Audit) serta <strong>Master Komponen</strong> (Stok Tersedia, Unit PC Penampung, dan Log Mutasi Checkout/Checkin).
                     </p>
                 </div>
 
@@ -254,81 +328,55 @@
                 <div class="modal-guide-step">
                     <div class="modal-guide-step-icon" style="background-color: #34495e;">1</div>
                     <div class="modal-guide-step-content">
-                        <h5>Pemasukan Kata Kunci (Multi-Source Search Engine)</h5>
+                        <h5>Omni-Search Engine (Aset IT & Komponen)</h5>
                         <p>
                             Pengguna dapat memasukkan berbagai jenis kata kunci pada 1 kolom pencarian utama:
-                            <br>&bull; <strong>Kode Barang / Asset Tag</strong> (Contoh: <code>PBM-SBY-GDT-L01-NVR-155.001</code> / <code>170714104142</code>)
-                            <br>&bull; <strong>Kode BS (Berita Acara Barang Rusak)</strong> (Contoh: <code>BS-0814</code> / <code>BS-0835</code> / <code>BS-0819</code>) &rarr; <em>Sistem otomatis melakukan Reverse Lookup ke aset pemilik BS tersebut!</em>
-                            <br>&bull; <strong>No. FAH (Form Analisa Hardware)</strong> (Contoh: <code>10//F-AH</code> / <code>F-AH</code>) &rarr; <em>Reverse Lookup ke aset pemilik No. FAH tersebut!</em>
-                            <br>&bull; <strong>Serial Number (SN)</strong> atau <strong>Nama Perangkat</strong>
+                            <br>&bull; <strong>Tag Aset / Barcode</strong> (Contoh: <code>PBM-250416001</code> / <code>170714104142</code>)
+                            <br>&bull; <strong>Kode Komponen / Serial</strong> (Contoh: <code>COM-260921001</code> / SN Hardisk / RAM / SSD) &rarr; <em>Otomatis membuka Kartu Stok & Daftar PC Penampung!</em>
+                            <br>&bull; <strong>Kode BS (Berita Acara Barang Rusak)</strong> (Contoh: <code>BS-0814</code> / <code>BS-0835</code>) &rarr; <em>Reverse Lookup ke aset pemilik BS!</em>
+                            <br>&bull; <strong>No. FAH (Form Analisa Hardware)</strong> (Contoh: <code>10//F-AH</code>) &rarr; <em>Reverse Lookup ke aset pemilik FAH!</em>
+                            <br>&bull; <strong>No. Surat Jalan (Barang Keluar)</strong> (Contoh: <code>IT-K-2608-00005</code>)
                         </p>
                     </div>
                 </div>
 
                 <!-- Step 2 -->
                 <div class="modal-guide-step">
-                    <div class="modal-guide-step-icon" style="background-color: #2980b9;">2</div>
+                    <div class="modal-guide-step-icon" style="background-color: #27ae60;">2</div>
                     <div class="modal-guide-step-content">
-                        <h5>Seksi 1: Data di Snipe-IT</h5>
+                        <h5>Pencarian Komponen (Dashboard & Kartu Stok)</h5>
                         <p>
-                            Menampilkan informasi identitas aset di Snipe-IT dengan **Kolom 1: Kode Barang** (Hyperlink aktif ke halaman detail aset), Foto Thumbnail, Status Barang, Kategori, Model, Company, Lokasi Fisik, dan waktu update terakhir.
+                            Jika query cocok dengan Komponen, sistem menampilkan:
+                            <br>&bull; <strong>Bento KPI Stok</strong>: Total Stok, Jumlah Terpasang di PC, Sisa Stok Tersedia (Ready), dan Kategori.
+                            <br>&bull; <strong>Tabel Unit Aset Penampung</strong>: Daftar seluruh PC/Laptop yang sedang menggunakan komponen tersebut lengkap dengan PIC dan lokasinya.
+                            <br>&bull; <strong>Histori Mutasi</strong>: Catatan kapan komponen di-checkout ke aset atau di-checkin kembali.
                         </p>
                     </div>
                 </div>
 
                 <!-- Step 3 -->
                 <div class="modal-guide-step">
-                    <div class="modal-guide-step-icon" style="background-color: #16a085;">3</div>
+                    <div class="modal-guide-step-icon" style="background-color: #2980b9;">3</div>
                     <div class="modal-guide-step-content">
-                        <h5>Seksi 2: Data di FAH (Form Analisa Hardware)</h5>
+                        <h5>Pencarian Aset IT (5 Seksi Lengkap + Komponen Terpasang)</h5>
                         <p>
-                            Menampilkan spesifikasi lengkap hardware (CPU, RAM, Disk 1 & 2, OS, IP Address, MAC Address, McAfee).
-                            <br>&bull; Badge <strong>No. FAH</strong> dapat diklik (*hyperlink*) untuk membuka dashboard analisa FAH secara instan.
-                            <br>&bull; Jika aset belum di-input di FAH, sistem menampilkan notifikasi merah tegas: <span class="label label-danger">BELUM ADA DATA FAH</span>.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Step 4 -->
-                <div class="modal-guide-step">
-                    <div class="modal-guide-step-icon" style="background-color: #d35400;">4</div>
-                    <div class="modal-guide-step-content">
-                        <h5>Seksi 3: Data di BS (Berita Acara Barang Rusak)</h5>
-                        <p>
-                            Menampilkan status pengajuan Berita Acara Barang Rusak, Kode BS, Tanggal Input, dan Catatan Kerusakan.
-                            <br>&bull; Badge <strong>Kode BS</strong> dapat diklik (*hyperlink*) untuk langsung mencari dokumen BS asli di Portal BMKB.
-                            <br>&bull; Jika aset tidak/belum memiliki BS, sistem menampilkan notifikasi merah tegas: <span class="label label-danger">BELUM ADA DATA BS</span>.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Step 5 -->
-                <div class="modal-guide-step">
-                    <div class="modal-guide-step-icon" style="background-color: #e67e22;">5</div>
-                    <div class="modal-guide-step-content">
-                        <h5>Seksi 4: Data Barang Keluar (Plugins Barang Keluar)</h5>
-                        <p>
-                            Lookup terpadu ke tabel Plugins Barang Keluar dengan menyajikan 5 kolom tepat:
-                            <code>Kode Barang</code>, <code>Nama Barang</code>, <code>No. SJ</code> (Surat Jalan), <code>Tujuan</code>, dan <code>Dibuat Tanggal</code>.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Step 6 -->
-                <div class="modal-guide-step" style="margin-bottom: 0;">
-                    <div class="modal-guide-step-icon" style="background-color: #8e44ad;">6</div>
-                    <div class="modal-guide-step-content">
-                        <h5>Seksi 5: Histori Log & Audit Trail Snipe-IT (Native View)</h5>
-                        <p>
-                            Terpisah di paling bawah dengan tombol *collapsible* (dihide secara default). Menyajikan 7 kolom persis antarmuka native Snipe-IT: 
-                            <code>Created At</code>, <code>Created By</code> (link hijau admin), <code>Action</code> (badge aksi), <code>Item</code>, <code>Target</code> (icon map-marker hijau), <code>Notes</code>, dan <code>Changed</code> (diff JSON log_meta).
+                            Jika query adalah Tag Aset, sistem menyajikan:
+                            <br>&bull; <strong>Seksi 1: Data di Snipe-IT</strong> (Fisik, Foto, Status, PIC, Lokasi).
+                            <br>&bull; <strong>Seksi 2: Data di FAH</strong> (Spesifikasi CPU, RAM, Disk, OS, IP/MAC, McAfee).
+                            <br>&bull; <strong>Seksi 2.5: Komponen Tambahan Terpasang</strong> (Daftar RAM/SSD/Hardware yang di-checkout ke unit ini).
+                            <br>&bull; <strong>Seksi 3: Data di BS</strong> (Berita Acara Kerusakan dari portal BMKB).
+                            <br>&bull; <strong>Seksi 4: Data Barang Keluar</strong> (Surat Jalan pengiriman).
+                            <br>&bull; <strong>Seksi 5: Histori Log & Audit Trail Native</strong>.
                         </p>
                     </div>
                 </div>
 
             </div>
             <div class="modal-footer" style="background-color: #f1f2f6; padding: 12px 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;"><span class="text-muted" style="font-size: 12px;"><i class="fa fa-clock-o"></i> <strong>Modul Track Cepat:</strong> Version 1.9.16 &bull; Last Updated: 2026-09-15 15:20 WIB</span><button type="button" class="btn btn-default font-weight-bold" data-dismiss="modal" style="font-weight: 700;">Tutup Panduan</button></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span class="text-muted" style="font-size: 12px;"><i class="fa fa-clock-o"></i> <strong>Modul Track Cepat:</strong> Version 1.9.17 &bull; Last Updated: 2026-10-02 12:45 WIB</span>
+                    <button type="button" class="btn btn-default font-weight-bold" data-dismiss="modal" style="font-weight: 700;">Tutup Panduan</button>
+                </div>
             </div>
         </div>
     </div>
@@ -339,7 +387,32 @@
 @section('moar_scripts')
 <script nonce="{{ csrf_token() }}">
 $(document).ready(function() {
+    var selectedMode = 'all';
+
     $("#track-input").focus();
+
+    // Mode Switcher Pills
+    $(".mode-pill-btn").on("click", function() {
+        $(".mode-pill-btn").removeClass("active");
+        $(this).addClass("active");
+        selectedMode = $(this).data("mode");
+
+        if (selectedMode === 'component') {
+            $("#track-input").attr("placeholder", "Scan Barcode / Ketik Kode Komponen (COM-...), Serial Number RAM/SSD, atau Nama Komponen...");
+        } else if (selectedMode === 'asset') {
+            $("#track-input").attr("placeholder", "Scan Barcode / Ketik Tag Aset (PBM-...), Serial PC/Laptop, No. BS, atau No. FAH...");
+        } else {
+            $("#track-input").attr("placeholder", "Scan Barcode / Ketik Tag Aset (PBM-...), Kode Komponen (COM-...), No. BS, No. FAH, atau Serial...");
+        }
+        $("#track-input").focus();
+    });
+
+    // Quick Chips click
+    $(".quick-chip").on("click", function() {
+        var q = $(this).data("q");
+        $("#track-input").val(q);
+        performTrackSearch(q);
+    });
 
     var urlParams = new URLSearchParams(window.location.search);
     var initialQuery = urlParams.get('q') || urlParams.get('query');
@@ -351,7 +424,7 @@ $(document).ready(function() {
     $("#btn-do-track").on("click", function() {
         var q = $("#track-input").val().trim();
         if (!q) {
-            alert("Harap masukkan Tag Aset atau Serial Number!");
+            alert("Harap masukkan Tag Aset, Kode Komponen, atau Serial Number!");
             return;
         }
         performTrackSearch(q);
@@ -365,7 +438,7 @@ $(document).ready(function() {
         }
     });
 
-    // Delegated event for toggle Section 4 History Log
+    // Delegated event for toggle Section 5 History Log
     $(document).on("click", "#btn-toggle-section4-history", function() {
         var container = $("#section4-history-container");
         var btn = $(this);
@@ -386,12 +459,19 @@ $(document).ready(function() {
         $.ajax({
             url: "{{ route('custom.track_cepat.search') }}",
             type: "GET",
-            data: { query: q },
+            data: { 
+                query: q,
+                mode: selectedMode
+            },
             success: function(data) {
-                renderTrackResult(data);
+                if (data.result_type === 'component') {
+                    renderComponentResult(data);
+                } else {
+                    renderAssetResult(data);
+                }
             },
             error: function(xhr) {
-                var msg = "Terjadi kesalahan saat mencari aset.";
+                var msg = "Terjadi kesalahan saat mencari data.";
                 if (xhr.responseJSON && xhr.responseJSON.error) {
                     msg = xhr.responseJSON.error;
                 }
@@ -400,9 +480,191 @@ $(document).ready(function() {
         });
     }
 
-    function renderTrackResult(data) {
+    // =======================================================
+    // RENDER COMPONENT RESULT VIEW
+    // =======================================================
+    function renderComponentResult(data) {
+        var comp = data.component;
+        var assignedAssets = data.assigned_assets || [];
+        var logs = data.logs || [];
+
+        var html = '';
+
+        // Header Banner Info
+        html += '<div class="alert alert-info" style="font-size: 13.5px; font-weight: 600; border-left: 5px solid #27ae60; background-color: #f0fdf4; color: #166534; margin-bottom: 16px; border-radius: 6px; padding: 12px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">' +
+                '<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">' +
+                '<div><i class="fa fa-puzzle-piece" style="font-size: 18px; margin-right: 6px; color: #27ae60 !important;"></i>' +
+                '<strong>HASIL TRACKING KOMPONEN:</strong> Menampilkan spesifikasi master, alokasi unit penampung, dan riwayat mutasi stok.' +
+                '</div>' +
+                '<span class="label label-success" style="font-size: 11px; padding: 4px 8px;"><i class="fa fa-check-circle"></i> Tipe: Komponen Hardware</span>' +
+                '</div></div>';
+
+        // SECTION 1: MASTER DATA & STOK KOMPONEN
+        html += '<div class="track-card">';
+        html += '  <div class="track-card-header" style="background-color: #1e3a8a !important; border-bottom: 2px solid #172554 !important;">';
+        html += '    <h3 class="track-card-title"><i class="fa fa-cube" style="color: #60a5fa !important;"></i> 1. DATA MASTER & KARTU STOK KOMPONEN</h3>';
+        html += '    <a href="' + comp.component_url + '" target="_blank" class="btn btn-header-link"><i class="fa fa-external-link"></i> Buka Detail Komponen</a>';
+        html += '  </div>';
+
+        // Bento KPI Bar
+        html += '  <div class="bento-kpi-grid">';
+        html += '    <div class="bento-kpi-card">';
+        html += '      <div class="bento-kpi-label"><i class="fa fa-cubes text-primary"></i> Total Kuantitas</div>';
+        html += '      <div class="bento-kpi-val" style="color: #1e3a8a;">' + comp.total_qty + ' <small style="font-size: 12px; font-weight: normal; color: #64748b;">Unit</small></div>';
+        html += '    </div>';
+        html += '    <div class="bento-kpi-card">';
+        html += '      <div class="bento-kpi-label"><i class="fa fa-desktop text-warning"></i> Terpasang di Aset</div>';
+        html += '      <div class="bento-kpi-val" style="color: #d97706;">' + comp.assigned_qty + ' <small style="font-size: 12px; font-weight: normal; color: #64748b;">Unit</small></div>';
+        html += '    </div>';
+        html += '    <div class="bento-kpi-card">';
+        html += '      <div class="bento-kpi-label"><i class="fa fa-check-circle text-success"></i> Sisa Stok Tersedia</div>';
+        var remColor = comp.remaining_qty > 0 ? '#16a34a' : '#dc2626';
+        html += '      <div class="bento-kpi-val" style="color: ' + remColor + ';">' + comp.remaining_qty + ' <small style="font-size: 12px; font-weight: normal; color: #64748b;">Unit</small></div>';
+        html += '    </div>';
+        html += '    <div class="bento-kpi-card">';
+        html += '      <div class="bento-kpi-label"><i class="fa fa-tags text-info"></i> Kategori</div>';
+        html += '      <div class="bento-kpi-val" style="font-size: 14px; font-weight: 700; color: #334155; margin-top: 4px;">' + comp.category + '</div>';
+        html += '    </div>';
+        html += '  </div>';
+
+        html += '  <div class="track-card-body">';
+        html += '    <div class="table-responsive">';
+        html += '      <table class="track-table table-bordered table-striped">';
+        html += '        <thead>';
+        html += '          <tr>';
+        html += '            <th style="width: 15%;">Kode / Serial Komponen</th>';
+        html += '            <th style="width: 25%;">Nama Komponen & Foto</th>';
+        html += '            <th style="width: 15%;">Model / Part No.</th>';
+        html += '            <th style="width: 15%;">Company & Lokasi Simpan</th>';
+        html += '            <th style="width: 15%;">Pembelian & Harga</th>';
+        html += '            <th style="width: 15%;">Catatan / Notes</th>';
+        html += '          </tr>';
+        html += '        </thead>';
+        html += '        <tbody>';
+        html += '          <tr>';
+        html += '            <td><a href="' + comp.component_url + '" target="_blank" class="label label-success" style="font-size: 12px; padding: 4px 8px;" title="Buka Detail Komponen"><i class="fa fa-barcode"></i> ' + comp.serial + ' <i class="fa fa-external-link" style="font-size: 9px;"></i></a></td>';
+        html += '            <td>';
+        html += '              <div style="display: flex; gap: 10px; align-items: center;">';
+        html += '                <img src="' + comp.image_url + '" alt="Foto" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #ced4da;">';
+        html += '                <strong style="color: #2c3e50; font-size: 14px;">' + comp.name + '</strong>';
+        html += '              </div>';
+        html += '            </td>';
+        html += '            <td>' + comp.model_number + '</td>';
+        html += '            <td><strong>' + comp.company + '</strong><br><small class="text-muted"><i class="fa fa-map-marker text-red"></i> ' + comp.location + '</small></td>';
+        html += '            <td><i class="fa fa-calendar text-muted"></i> ' + comp.purchase_date + '<br><small class="text-muted">Biaya: ' + comp.purchase_cost + '</small></td>';
+        html += '            <td>' + comp.notes + '</td>';
+        html += '          </tr>';
+        html += '        </tbody>';
+        html += '      </table>';
+        html += '    </div>';
+        html += '  </div>';
+        html += '</div>';
+
+        // SECTION 2: DAFTAR UNIT ASET PENAMPUNG (ASSIGNED TO ASSETS)
+        html += '<div class="track-card">';
+        html += '  <div class="track-card-header">';
+        html += '    <h3 class="track-card-title"><i class="fa fa-desktop"></i> 2. DAFTAR UNIT ASET YANG MENGGUNAKAN KOMPONEN INI (' + assignedAssets.length + ' Unit Aset Terpasang)</h3>';
+        html += '  </div>';
+        html += '  <div class="track-card-body">';
+        html += '    <div class="table-responsive">';
+        html += '      <table class="track-table table-bordered table-striped">';
+        html += '        <thead>';
+        html += '          <tr>';
+        html += '            <th style="width: 5%;">#</th>';
+        html += '            <th style="width: 15%;">Kode Barang / Asset Tag</th>';
+        html += '            <th style="width: 22%;">Nama Unit Aset</th>';
+        html += '            <th style="width: 12%;">Status Aset</th>';
+        html += '            <th style="width: 15%;">Lokasi Penempatan</th>';
+        html += '            <th style="width: 15%;">PIC / Pengguna</th>';
+        html += '            <th style="width: 8%; text-align: center;">Qty Pasang</th>';
+        html += '            <th style="width: 8%;">Tgl Pasang</th>';
+        html += '          </tr>';
+        html += '        </thead>';
+        html += '        <tbody>';
+
+        if (assignedAssets.length > 0) {
+            $.each(assignedAssets, function(idx, a) {
+                html += '          <tr>';
+                html += '            <td>' + (idx + 1) + '</td>';
+                html += '            <td><a href="' + a.asset_url + '" target="_blank" class="label label-primary" style="font-size: 12px; padding: 4px 8px;"><i class="fa fa-barcode"></i> ' + a.asset_tag + ' <i class="fa fa-external-link" style="font-size: 9px;"></i></a></td>';
+                html += '            <td><strong>' + a.asset_name + '</strong><br><small class="text-muted">' + a.category_name + ' (' + a.model_name + ')</small></td>';
+                html += '            <td><span class="label" style="background-color: ' + a.status_color + '; font-size: 11px; padding: 3px 6px;">' + a.status_name + '</span></td>';
+                html += '            <td><i class="fa fa-map-marker text-red"></i> ' + a.location_name + '<br><small class="text-muted">' + a.company_name + '</small></td>';
+                html += '            <td><i class="fa fa-user text-muted"></i> <strong>' + a.assigned_user + '</strong></td>';
+                html += '            <td style="text-align: center;"><span class="badge" style="background-color: #2c3e50; font-size: 12px;">' + a.assigned_qty + '</span></td>';
+                html += '            <td><i class="fa fa-clock-o text-muted"></i> ' + a.assigned_date + '</td>';
+                html += '          </tr>';
+            });
+        } else {
+            html += '          <tr>';
+            html += '            <td colspan="8" style="text-align: center; padding: 24px; color: #64748b; background-color: #f8fafc; font-weight: 600;">';
+            html += '              <i class="fa fa-info-circle text-primary" style="font-size: 18px; margin-right: 6px;"></i> Komponen ini saat ini masih berada di stok gudang IT (belum terpasang pada unit aset manapun).';
+            html += '            </td>';
+            html += '          </tr>';
+        }
+
+        html += '        </tbody>';
+        html += '      </table>';
+        html += '    </div>';
+        html += '  </div>';
+        html += '</div>';
+
+        // SECTION 3: RIWAYAT MUTASI & LOG AKTIVITAS KOMPONEN
+        html += '<div class="track-card">';
+        html += '  <div class="track-card-header">';
+        html += '    <h3 class="track-card-title"><i class="fa fa-history"></i> 3. RIWAYAT MUTASI & LOG AKTIVITAS KOMPONEN</h3>';
+        html += '    <a href="' + comp.history_url + '" target="_blank" class="btn btn-header-link"><i class="fa fa-external-link"></i> Buka Log Komponen</a>';
+        html += '  </div>';
+        html += '  <div class="track-card-body" style="padding: 14px;">';
+
+        if (logs.length > 0) {
+            html += '    <div class="table-responsive">';
+            html += '      <table class="track-table table-bordered table-striped">';
+            html += '        <thead>';
+            html += '          <tr>';
+            html += '            <th style="width: 15%;">Waktu Eksekusi</th>';
+            html += '            <th style="width: 18%;">Eksekutor (Admin)</th>';
+            html += '            <th style="width: 15%;">Tipe Aksi</th>';
+            html += '            <th style="width: 25%;">Target Unit / Lokasi</th>';
+            html += '            <th style="width: 27%;">Catatan / Keterangan</th>';
+            html += '          </tr>';
+            html += '        </thead>';
+            html += '        <tbody>';
+            $.each(logs, function(idx, l) {
+                var actionBadge = '<span class="label label-default">' + l.action + '</span>';
+                if (l.action === 'checkout') actionBadge = '<span class="label label-success">checkout to asset</span>';
+                else if (l.action === 'checkin from' || l.action === 'checkin') actionBadge = '<span class="label label-info">checkin from asset</span>';
+                else if (l.action === 'create') actionBadge = '<span class="label label-primary">create</span>';
+                else if (l.action === 'update') actionBadge = '<span class="label label-default" style="background-color: #8e44ad;">update</span>';
+
+                html += '          <tr>';
+                html += '            <td><i class="fa fa-clock-o text-muted"></i> ' + l.created_at + '</td>';
+                html += '            <td><strong style="color: #27ae60;"><i class="fa fa-user"></i> ' + l.admin_name + '</strong></td>';
+                html += '            <td>' + actionBadge + '</td>';
+                html += '            <td><i class="fa fa-desktop text-primary"></i> <strong>' + l.target_name + '</strong></td>';
+                html += '            <td>' + l.note + '</td>';
+                html += '          </tr>';
+            });
+            html += '        </tbody>';
+            html += '      </table>';
+            html += '    </div>';
+        } else {
+            html += '    <div style="padding: 16px; text-align: center; color: #64748b; background-color: #fafafa; border: 1px solid #e9ecef; border-radius: 4px;"><i class="fa fa-info-circle"></i> Belum ada rekaman log mutasi untuk komponen ini.</div>';
+        }
+
+        html += '  </div>';
+        html += '</div>';
+
+        $("#track-result-container").html(html).fadeIn(250);
+    }
+
+    // =======================================================
+    // RENDER ASSET RESULT VIEW
+    // =======================================================
+    function renderAssetResult(data) {
         var asset = data.asset;
         var fah = data.fah_specs;
+        var installedComps = data.installed_components || [];
         var maints = data.maintenances || [];
         var logs = data.logs || [];
 
@@ -529,7 +791,55 @@ $(document).ready(function() {
         html += '</div>';
 
         // ==========================================
-                // ==========================================
+        // SECTION 2.5: KOMPONEN TAMBAHAN TERPASANG (RAM / SSD / HARDWARE)
+        // ==========================================
+        html += '<div class="track-card">';
+        html += '  <div class="track-card-header" style="background-color: #2e7d32 !important; border-bottom: 2px solid #1b5e20 !important;">';
+        html += '    <h3 class="track-card-title"><i class="fa fa-puzzle-piece" style="color: #a5d6a7 !important;"></i> 2.5. KOMPONEN TAMBAHAN TERPASANG (' + installedComps.length + ' Komponen di Unit Ini)</h3>';
+        html += '  </div>';
+        html += '  <div class="track-card-body">';
+        html += '    <div class="table-responsive">';
+        html += '      <table class="track-table table-bordered table-striped">';
+        html += '        <thead>';
+        html += '          <tr>';
+        html += '            <th style="width: 5%;">#</th>';
+        html += '            <th style="width: 25%;">Nama Komponen</th>';
+        html += '            <th style="width: 18%;">Kode / Serial Komponen</th>';
+        html += '            <th style="width: 15%;">Kategori</th>';
+        html += '            <th style="width: 15%;">Model / Part No.</th>';
+        html += '            <th style="width: 8%; text-align: center;">Qty</th>';
+        html += '            <th style="width: 14%;">Tanggal Pemasangan</th>';
+        html += '          </tr>';
+        html += '        </thead>';
+        html += '        <tbody>';
+
+        if (installedComps.length > 0) {
+            $.each(installedComps, function(idx, c) {
+                html += '          <tr>';
+                html += '            <td>' + (idx + 1) + '</td>';
+                html += '            <td><strong style="color: #2c3e50;"><i class="fa fa-cube text-success"></i> ' + c.component_name + '</strong></td>';
+                html += '            <td><a href="' + c.component_url + '" target="_blank" class="label label-success" style="font-size: 11px; padding: 3px 6px;"><i class="fa fa-barcode"></i> ' + c.component_serial + ' <i class="fa fa-external-link" style="font-size: 9px;"></i></a></td>';
+                html += '            <td>' + c.category_name + '</td>';
+                html += '            <td>' + c.model_number + '</td>';
+                html += '            <td style="text-align: center;"><span class="badge" style="background-color: #2e7d32; font-size: 12px;">' + c.assigned_qty + '</span></td>';
+                html += '            <td><i class="fa fa-clock-o text-muted"></i> ' + c.installed_date + '</td>';
+                html += '          </tr>';
+            });
+        } else {
+            html += '          <tr>';
+            html += '            <td colspan="7" style="text-align: center; padding: 18px; color: #64748b; background-color: #f8fafc; font-weight: 600;">';
+            html += '              <i class="fa fa-info-circle text-info" style="font-size: 16px; margin-right: 5px;"></i> Tidak ada komponen tambahan (RAM/SSD) yang di-checkout secara manual ke unit aset ini.';
+            html += '            </td>';
+            html += '          </tr>';
+        }
+
+        html += '        </tbody>';
+        html += '      </table>';
+        html += '    </div>';
+        html += '  </div>';
+        html += '</div>';
+
+        // ==========================================
         // SECTION 3: DATA DI BS (BERITA ACARA BARANG RUSAK)
         // ==========================================
         var bsList = asset.bs_records || [];
@@ -592,9 +902,7 @@ $(document).ready(function() {
         html += '  </div>';
         html += '</div>';
 
-        
         // ==========================================
-                // ==========================================
         // SECTION 4: DATA BARANG KELUAR (PLUGINS BARANG KELUAR)
         // ==========================================
         var bkList = data.barang_keluar || [];
@@ -650,8 +958,9 @@ $(document).ready(function() {
         html += '  </div>';
         html += '</div>';
 
+        // ==========================================
         // SECTION 5: HISTORI LOG & AUDIT TRAIL SNIPE-IT (NATIVE VIEW)
-         // ==========================================
+        // ==========================================
         html += '<div class="track-card">';
         html += '  <div class="track-card-header">';
         html += '    <h3 class="track-card-title"><i class="fa fa-history"></i> 5. HISTORI LOG & AUDIT TRAIL SNIPE-IT (NATIVE VIEW)</h3>';
@@ -659,7 +968,7 @@ $(document).ready(function() {
         html += '  </div>';
         html += '  <div class="track-card-body" style="padding: 16px;">';
 
-        // Toggle Button for Section 4
+        // Toggle Button for Section 5
         html += '    <div style="text-align: center;">';
         html += '      <button type="button" id="btn-toggle-section4-history" data-maint-count="' + maints.length + '" data-log-count="' + logs.length + '" class="btn-toggle-custom">';
         html += '        <i class="fa fa-chevron-down"></i> Tampilkan Detail Histori Maintenance & Action Logs (' + maints.length + ' Record, ' + logs.length + ' Log)';
@@ -702,7 +1011,7 @@ $(document).ready(function() {
             html += '      <div style="padding: 12px; text-align: center; color: #778ca3; background: #fafafa; border: 1px solid #e9ecef; border-radius: 4px; margin-bottom: 16px;"><i class="fa fa-info-circle"></i> Belum ada riwayat perbaikan / maintenance terdaftar untuk aset ini.</div>';
         }
 
-        // Table 2: Action Logs Audit Trail (Defensive Safe Properties to Prevent 'undefined')
+        // Table 2: Action Logs Audit Trail
         html += '      <h4 style="font-weight: 700; margin-top: 16px; margin-bottom: 10px; color: #2c3e50; font-size: 14px;"><i class="fa fa-history text-info"></i> Tabel Action Logs & Audit Trail Terbaru (' + logs.length + ' Log)</h4>';
         if (logs.length > 0) {
             html += '      <div class="table-responsive">';

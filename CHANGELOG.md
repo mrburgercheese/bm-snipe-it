@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.9.17] - 2026-10-02 12:48
+### Added
+- **Modul Smart Unified Track Cepat (Dukungan Pelacakan Komponen & Relasi Dua Arah Aset ↔ Komponen)**:
+  - **Omni-Search Engine Cerdas**: Input pencarian kini mendukung Tag Aset (`PBM-...`), Kode Komponen (`COM-...`), Serial Number RAM/SSD/Hardisk, No. BS, No. FAH, maupun No. SJ.
+  - **Pencarian Master & Status Stok Komponen (`result_type: component`)**:
+    - Bento KPI Bar: Total Kuantitas, Sedang Terpasang di Aset, Sisa Stok Tersedia (Ready to Deploy), dan Kategori Komponen.
+    - Tabel Master Komponen: Nama, Serial/Kode COM, Model No, PO/Pembelian, Harga, Lokasi Gudang Penyimpanan, dan Catatan.
+    - **Tabel Daftar Unit Aset Penampung**: Menampilkan seluruh PC / Laptop yang sedang menggunakan komponen tersebut lengkap dengan Tag Aset (Hyperlink), Nama PC, Status Aset, Lokasi, PIC Pengguna, Qty Dipasang, dan Tanggal Pemasangan.
+    - **Tabel Riwayat Mutasi & Audit Log Komponen**: Rekaman log transaksi checkout to asset, checkin, update, dan nama admin eksekutor.
+  - **Relasi Dua Arah pada Detail Aset (`result_type: asset`)**:
+    - Menambahkan **Seksi 2.5: 🧩 Komponen Tambahan Terpasang**: Menampilkan daftar seluruh komponen RAM, SSD, HDD, dan part pengganti yang di-checkout ke unit PC/Laptop tersebut dari tabel `components_assets`.
+  - **Filter Mode Switcher Pills**: Tombol filter cepat di atas kotak pencarian (`[ 🌐 Semua (Auto-Detect) ]`, `[ 💻 Khusus Aset IT ]`, `[ 🧩 Khusus Komponen ]`).
+  - **Contoh Pencarian Cepat (*Quick Chips*)**: Tautan instan barcode contoh untuk mempermudah pengujian staf IT.
+
 ## [1.9.16] - 2026-09-15 15:15
 ### Fixed
 - **Perbaikan Prioritas Pencarian Track Cepat (Active Assets vs Soft-Deleted/Arsip)**:

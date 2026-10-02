@@ -888,74 +888,204 @@ Route::get('/track-cepat', function () {
 Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
     $prefix = DB::getTablePrefix();
     $queryStr = trim($request->input('query', ''));
+    $mode = trim($request->input('mode', 'all')); // 'all', 'asset', 'component'
+
     if (empty($queryStr)) {
-        return response()->json(['error' => 'Harap masukkan Kode Barang / Tag Aset, Kode BS, No. FAH, Serial Number, atau Nama Aset!'], 400);
+        return response()->json(['error' => 'Harap masukkan Kode Barang / Tag Aset, Kode Komponen (COM-...), Serial Number, Kode BS, atau No. FAH!'], 400);
     }
 
-    // 1. Prioritaskan pencarian pada Aset AKTIF (non-deleted)
-    $asset = App\Models\Asset::with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
-        ->where(function($q) use ($queryStr) {
-            $q->where('asset_tag', $queryStr)
-              ->orWhere('serial', $queryStr)
-              ->orWhere('asset_tag', 'LIKE', "%{$queryStr}%")
-              ->orWhere('serial', 'LIKE', "%{$queryStr}%")
-              ->orWhere('name', 'LIKE', "%{$queryStr}%")
-              ->orWhere('notes', 'LIKE', "%{$queryStr}%");
-        })
-        ->orderByRaw("CASE WHEN asset_tag = ? THEN 0 WHEN serial = ? THEN 1 ELSE 2 END", [$queryStr, $queryStr])
-        ->orderBy('id', 'DESC')
-        ->first();
+    $isCompPrefixed = (bool)preg_match('/^COM[-\s]?\d+/i', $queryStr);
 
-    // 2. Pencarian relasi maintenance pada Aset Aktif
-    if (!$asset) {
-        $maintAssetIds = DB::table('maintenances')
-            ->where('name', 'LIKE', "%{$queryStr}%")
-            ->orWhere('notes', 'LIKE', "%{$queryStr}%")
-            ->pluck('asset_id');
+    // ==========================================
+    // HELPER FUNCTION: SEARCH COMPONENT
+    // ==========================================
+    $searchComponentFn = function() use ($queryStr, $prefix) {
+        $component = App\Models\Component::with(['category', 'company', 'location'])
+            ->where(function($q) use ($queryStr) {
+                $q->where('serial', $queryStr)
+                  ->orWhere('name', $queryStr)
+                  ->orWhere('serial', 'LIKE', "%{$queryStr}%")
+                  ->orWhere('name', 'LIKE', "%{$queryStr}%")
+                  ->orWhere('model_number', 'LIKE', "%{$queryStr}%")
+                  ->orWhere('order_number', 'LIKE', "%{$queryStr}%")
+                  ->orWhere('notes', 'LIKE', "%{$queryStr}%");
+            })
+            ->orderByRaw("CASE WHEN serial = ? THEN 0 WHEN name = ? THEN 1 ELSE 2 END", [$queryStr, $queryStr])
+            ->orderBy('id', 'DESC')
+            ->first();
 
-        if ($maintAssetIds->isNotEmpty()) {
-            $asset = App\Models\Asset::with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
-                ->whereIn('id', $maintAssetIds)
-                ->orderBy('id', 'DESC')
-                ->first();
+        if (!$component) return null;
+
+        $totalQty = (int)$component->qty;
+        $assignedQty = (int)DB::table('components_assets')->where('component_id', $component->id)->sum('assigned_qty');
+        $remainingQty = max(0, $totalQty - $assignedQty);
+        $minAmt = (int)$component->min_amt;
+
+        // Query unit aset yang sedang menggunakan komponen ini
+        $assignedAssets = DB::table('components_assets')
+            ->join('assets', 'components_assets.asset_id', '=', 'assets.id')
+            ->leftJoin('models', 'assets.model_id', '=', 'models.id')
+            ->leftJoin('categories', 'models.category_id', '=', 'categories.id')
+            ->leftJoin('status_labels', 'assets.status_id', '=', 'status_labels.id')
+            ->leftJoin('locations', 'assets.location_id', '=', 'locations.id')
+            ->leftJoin('companies', 'assets.company_id', '=', 'companies.id')
+            ->leftJoin('users', function($join) {
+                $join->on('assets.assigned_to', '=', 'users.id')
+                     ->where('assets.assigned_type', '=', 'App\\Models\\User');
+            })
+            ->where('components_assets.component_id', $component->id)
+            ->whereNull('assets.deleted_at')
+            ->select(
+                'assets.id as asset_id',
+                'assets.asset_tag',
+                'assets.name as asset_name',
+                'models.name as model_name',
+                'categories.name as category_name',
+                'status_labels.name as status_name',
+                'status_labels.color as status_color',
+                'locations.name as location_name',
+                'companies.name as company_name',
+                'components_assets.assigned_qty',
+                'components_assets.created_at as assigned_date',
+                DB::raw("CONCAT(" . $prefix . "users.first_name, ' ', COALESCE(" . $prefix . "users.last_name, '')) as assigned_user")
+            )
+            ->orderBy('components_assets.id', 'DESC')
+            ->get();
+
+        $assignedList = [];
+        foreach ($assignedAssets as $aa) {
+            $assignedList[] = [
+                'asset_id' => $aa->asset_id,
+                'asset_tag' => $aa->asset_tag,
+                'asset_name' => $aa->asset_name ?: ($aa->model_name ?: 'Aset Tanpa Nama'),
+                'model_name' => $aa->model_name ?: '-',
+                'category_name' => $aa->category_name ?: '-',
+                'status_name' => $aa->status_name ?: 'Tanpa Status',
+                'status_color' => $aa->status_color ?: '#999',
+                'location_name' => $aa->location_name ?: '-',
+                'company_name' => $aa->company_name ?: '-',
+                'assigned_user' => !empty(trim($aa->assigned_user)) ? trim($aa->assigned_user) : '-',
+                'assigned_qty' => (int)$aa->assigned_qty,
+                'assigned_date' => $aa->assigned_date ? date('d-m-Y H:i', strtotime($aa->assigned_date)) : '-',
+                'asset_url' => url('hardware/' . $aa->asset_id)
+            ];
         }
-    }
 
-    // 3. Pencarian relasi action_logs pada Aset Aktif
-    if (!$asset) {
-        $logAssetIds = DB::table('action_logs')
-            ->where('item_type', 'App\\Models\\Asset')
-            ->where('note', 'LIKE', "%{$queryStr}%")
-            ->pluck('item_id');
+        // Action Logs untuk Komponen
+        $rawCompLogs = DB::table('action_logs')
+            ->leftJoin('users as admin_user', 'action_logs.created_by', '=', 'admin_user.id')
+            ->leftJoin('assets as target_asset', function($join) {
+                $join->on('action_logs.target_id', '=', 'target_asset.id')
+                     ->where('action_logs.target_type', '=', 'App\\Models\\Asset');
+            })
+            ->leftJoin('users as target_user', function($join) {
+                $join->on('action_logs.target_id', '=', 'target_user.id')
+                     ->where('action_logs.target_type', '=', 'App\\Models\\User');
+            })
+            ->leftJoin('locations as target_loc', function($join) {
+                $join->on('action_logs.target_id', '=', 'target_loc.id')
+                     ->where('action_logs.target_type', '=', 'App\\Models\\Location');
+            })
+            ->where('action_logs.item_type', 'App\\Models\\Component')
+            ->where('action_logs.item_id', $component->id)
+            ->select(
+                'action_logs.id',
+                'action_logs.action_type',
+                'action_logs.action_date',
+                'action_logs.note',
+                'action_logs.log_meta',
+                'action_logs.created_at',
+                'action_logs.target_type',
+                DB::raw("CONCAT(" . $prefix . "admin_user.first_name, ' ', COALESCE(" . $prefix . "admin_user.last_name, '')) as admin_name"),
+                DB::raw("CASE 
+                    WHEN " . $prefix . "action_logs.target_type = 'App\\\\Models\\\\Asset' THEN CONCAT(" . $prefix . "target_asset.name, ' (#', " . $prefix . "target_asset.asset_tag, ')')
+                    WHEN " . $prefix . "action_logs.target_type = 'App\\\\Models\\\\User' THEN CONCAT(" . $prefix . "target_user.first_name, ' ', COALESCE(" . $prefix . "target_user.last_name, ''))
+                    WHEN " . $prefix . "action_logs.target_type = 'App\\\\Models\\\\Location' THEN " . $prefix . "target_loc.name
+                    ELSE '-'
+                END as target_name")
+            )
+            ->orderBy('action_logs.id', 'DESC')
+            ->take(50)
+            ->get();
 
-        if ($logAssetIds->isNotEmpty()) {
-            $asset = App\Models\Asset::with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
-                ->whereIn('id', $logAssetIds)
-                ->orderBy('id', 'DESC')
-                ->first();
-        }
-    }
-
-    // 4. Pencarian via Plugin Barang Keluar pada Aset Aktif
-    if (!$asset) {
-        try {
-            $pluginRowsRev = DB::select("SELECT serial FROM bmkb_wp_2tqty.bm_inv_barang_keluar WHERE no_transaksi_sistem LIKE ? OR no_transaksi_manual LIKE ? OR serial LIKE ? ORDER BY id DESC LIMIT 5", ["%{$queryStr}%", "%{$queryStr}%", "%{$queryStr}%"]);
-            if (!empty($pluginRowsRev)) {
-                $serials = array_filter(array_column($pluginRowsRev, 'serial'));
-                if (!empty($serials)) {
-                    $asset = App\Models\Asset::with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
-                        ->whereIn('asset_tag', $serials)
-                        ->orderBy('id', 'DESC')
-                        ->first();
-                }
+        $compLogs = [];
+        foreach ($rawCompLogs as $cl) {
+            $actType = strtolower($cl->action_type);
+            $actionDesc = 'Aksi Komponen';
+            if ($actType == 'checkout') {
+                $actionDesc = 'Checkout (Dipasang pada ' . ($cl->target_name ?: 'Aset') . ')';
+            } elseif ($actType == 'checkin from' || $actType == 'checkin') {
+                $actionDesc = 'Checkin (Dilepas dari ' . ($cl->target_name ?: 'Aset') . ')';
+            } elseif ($actType == 'create') {
+                $actionDesc = 'Pembuatan Master Komponen';
+            } elseif ($actType == 'update') {
+                $actionDesc = 'Pembaruan Data Komponen';
+            } else {
+                $actionDesc = ucfirst($actType);
             }
-        } catch (\Throwable $e) {}
+
+            $compLogs[] = [
+                'id' => $cl->id,
+                'action' => $actType,
+                'action_type' => $cl->action_type,
+                'action_description' => $actionDesc,
+                'created_at' => $cl->action_date ? date('Y-m-d H:i', strtotime($cl->action_date)) : date('Y-m-d H:i', strtotime($cl->created_at)),
+                'admin_name' => !empty(trim($cl->admin_name)) ? trim($cl->admin_name) : 'Bakhtiyar Sierad',
+                'target_name' => $cl->target_name ?: '-',
+                'note' => !empty(trim($cl->note)) ? trim($cl->note) : '-'
+            ];
+        }
+
+        $imageUrl = url('img/build/app/asset-placeholder.png');
+        if (!empty($component->image)) {
+            $imageUrl = url('uploads/components/' . $component->image);
+        }
+
+        return [
+            'result_type' => 'component',
+            'component' => [
+                'id' => $component->id,
+                'name' => $component->name,
+                'serial' => $component->serial ?: '-',
+                'category' => $component->category ? $component->category->name : '-',
+                'model_number' => $component->model_number ?: '-',
+                'order_number' => $component->order_number ?: '-',
+                'purchase_date' => $component->purchase_date ? date('d-m-Y', strtotime($component->purchase_date)) : '-',
+                'purchase_cost' => $component->purchase_cost ? 'Rp ' . number_format($component->purchase_cost, 0, ',', '.') : '-',
+                'min_amt' => $minAmt,
+                'total_qty' => $totalQty,
+                'assigned_qty' => $assignedQty,
+                'remaining_qty' => $remainingQty,
+                'company' => $component->company ? $component->company->name : '-',
+                'location' => $component->location ? $component->location->name : '-',
+                'image_url' => $imageUrl,
+                'component_url' => url('components/' . $component->id),
+                'history_url' => url('components/' . $component->id . '#history'),
+                'notes' => $component->notes ?: '-'
+            ],
+            'assigned_assets' => $assignedList,
+            'logs' => $compLogs
+        ];
+    };
+
+    // Jika mode eksklusif 'component' atau diawali prefix 'COM-', cari komponen terlebih dahulu
+    if ($mode === 'component' || ($mode === 'all' && $isCompPrefixed)) {
+        $compResult = $searchComponentFn();
+        if ($compResult) {
+            return response()->json($compResult);
+        }
+        if ($mode === 'component') {
+            return response()->json(['error' => 'Komponen dengan Kode / Serial / Nama "' . htmlspecialchars($queryStr) . '" tidak ditemukan!'], 404);
+        }
     }
 
-    // 5. FALLBACK: Jika tidak ditemukan di Aset Aktif sama sekali, baru cari di Aset Terhapus/Arsip (onlyTrashed)
-    if (!$asset) {
-        $asset = App\Models\Asset::onlyTrashed()
-            ->with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
+    // ==========================================
+    // PENCARIAN ASET IT (PC / LAPTOP / SERVER / DLL)
+    // ==========================================
+    $asset = null;
+    if ($mode !== 'component') {
+        // 1. Prioritaskan pencarian pada Aset AKTIF (non-deleted)
+        $asset = App\Models\Asset::with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
             ->where(function($q) use ($queryStr) {
                 $q->where('asset_tag', $queryStr)
                   ->orWhere('serial', $queryStr)
@@ -968,35 +1098,106 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
             ->orderBy('id', 'DESC')
             ->first();
 
+        // 2. Pencarian relasi maintenance pada Aset Aktif
         if (!$asset) {
-            $maintAssetId = DB::table('maintenances')
+            $maintAssetIds = DB::table('maintenances')
                 ->where('name', 'LIKE', "%{$queryStr}%")
                 ->orWhere('notes', 'LIKE', "%{$queryStr}%")
-                ->value('asset_id');
+                ->pluck('asset_id');
 
-            if ($maintAssetId) {
-                $asset = App\Models\Asset::withTrashed()
-                    ->with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
-                    ->find($maintAssetId);
+            if ($maintAssetIds->isNotEmpty()) {
+                $asset = App\Models\Asset::with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
+                    ->whereIn('id', $maintAssetIds)
+                    ->orderBy('id', 'DESC')
+                    ->first();
             }
         }
 
+        // 3. Pencarian relasi action_logs pada Aset Aktif
         if (!$asset) {
-            $logAssetId = DB::table('action_logs')
+            $logAssetIds = DB::table('action_logs')
                 ->where('item_type', 'App\\Models\\Asset')
                 ->where('note', 'LIKE', "%{$queryStr}%")
-                ->value('item_id');
+                ->pluck('item_id');
 
-            if ($logAssetId) {
-                $asset = App\Models\Asset::withTrashed()
-                    ->with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
-                    ->find($logAssetId);
+            if ($logAssetIds->isNotEmpty()) {
+                $asset = App\Models\Asset::with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
+                    ->whereIn('id', $logAssetIds)
+                    ->orderBy('id', 'DESC')
+                    ->first();
+            }
+        }
+
+        // 4. Pencarian via Plugin Barang Keluar pada Aset Aktif
+        if (!$asset) {
+            try {
+                $pluginRowsRev = DB::select("SELECT serial FROM bmkb_wp_2tqty.bm_inv_barang_keluar WHERE no_transaksi_sistem LIKE ? OR no_transaksi_manual LIKE ? OR serial LIKE ? ORDER BY id DESC LIMIT 5", ["%{$queryStr}%", "%{$queryStr}%", "%{$queryStr}%"]);
+                if (!empty($pluginRowsRev)) {
+                    $serials = array_filter(array_column($pluginRowsRev, 'serial'));
+                    if (!empty($serials)) {
+                        $asset = App\Models\Asset::with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
+                            ->whereIn('asset_tag', $serials)
+                            ->orderBy('id', 'DESC')
+                            ->first();
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // 5. FALLBACK: Jika tidak ditemukan di Aset Aktif sama sekali, baru cari di Aset Terhapus/Arsip (onlyTrashed)
+        if (!$asset) {
+            $asset = App\Models\Asset::onlyTrashed()
+                ->with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
+                ->where(function($q) use ($queryStr) {
+                    $q->where('asset_tag', $queryStr)
+                      ->orWhere('serial', $queryStr)
+                      ->orWhere('asset_tag', 'LIKE', "%{$queryStr}%")
+                      ->orWhere('serial', 'LIKE', "%{$queryStr}%")
+                      ->orWhere('name', 'LIKE', "%{$queryStr}%")
+                      ->orWhere('notes', 'LIKE', "%{$queryStr}%");
+                })
+                ->orderByRaw("CASE WHEN asset_tag = ? THEN 0 WHEN serial = ? THEN 1 ELSE 2 END", [$queryStr, $queryStr])
+                ->orderBy('id', 'DESC')
+                ->first();
+
+            if (!$asset) {
+                $maintAssetId = DB::table('maintenances')
+                    ->where('name', 'LIKE', "%{$queryStr}%")
+                    ->orWhere('notes', 'LIKE', "%{$queryStr}%")
+                    ->value('asset_id');
+
+                if ($maintAssetId) {
+                    $asset = App\Models\Asset::withTrashed()
+                        ->with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
+                        ->find($maintAssetId);
+                }
+            }
+
+            if (!$asset) {
+                $logAssetId = DB::table('action_logs')
+                    ->where('item_type', 'App\\Models\\Asset')
+                    ->where('note', 'LIKE', "%{$queryStr}%")
+                    ->value('item_id');
+
+                if ($logAssetId) {
+                    $asset = App\Models\Asset::withTrashed()
+                        ->with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
+                        ->find($logAssetId);
+                }
             }
         }
     }
 
+    // Jika Aset tidak ditemukan dan mode adalah 'all', coba fallback cari ke Komponen
+    if (!$asset && $mode === 'all') {
+        $compResult = $searchComponentFn();
+        if ($compResult) {
+            return response()->json($compResult);
+        }
+    }
+
     if (!$asset) {
-        return response()->json(['error' => 'Aset dengan pencarian Kode Barang / Kode BS / No. FAH / Serial "' . htmlspecialchars($queryStr) . '" tidak ditemukan!'], 404);
+        return response()->json(['error' => 'Data Aset atau Komponen dengan kata kunci "' . htmlspecialchars($queryStr) . '" tidak ditemukan!'], 404);
     }
 
     $imageUrl = url('img/build/app/asset-placeholder.png');
@@ -1019,6 +1220,41 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
 
     $isDeleted = $asset->trashed();
     $deletedAt = $isDeleted ? $asset->deleted_at->format('Y-m-d H:i:s') : null;
+
+    // Ambil Komponen yang Terpasang pada Aset ini (components_assets)
+    $installedComponents = DB::table('components_assets')
+        ->join('components', 'components_assets.component_id', '=', 'components.id')
+        ->leftJoin('categories', 'components.category_id', '=', 'categories.id')
+        ->leftJoin('locations', 'components.location_id', '=', 'locations.id')
+        ->where('components_assets.asset_id', $asset->id)
+        ->whereNull('components.deleted_at')
+        ->select(
+            'components.id as component_id',
+            'components.name as component_name',
+            'components.serial as component_serial',
+            'components.model_number',
+            'categories.name as category_name',
+            'locations.name as location_name',
+            'components_assets.assigned_qty',
+            'components_assets.created_at as installed_date'
+        )
+        ->orderBy('components_assets.id', 'DESC')
+        ->get();
+
+    $installedList = [];
+    foreach ($installedComponents as $ic) {
+        $installedList[] = [
+            'component_id' => $ic->component_id,
+            'component_name' => $ic->component_name,
+            'component_serial' => $ic->component_serial ?: '-',
+            'model_number' => $ic->model_number ?: '-',
+            'category_name' => $ic->category_name ?: '-',
+            'location_name' => $ic->location_name ?: '-',
+            'assigned_qty' => (int)$ic->assigned_qty,
+            'installed_date' => $ic->installed_date ? date('d-m-Y H:i', strtotime($ic->installed_date)) : '-',
+            'component_url' => url('components/' . $ic->component_id)
+        ];
+    }
 
     $maintenances = DB::table('maintenances')
         ->leftJoin('suppliers', 'maintenances.supplier_id', '=', 'suppliers.id')
@@ -1113,14 +1349,12 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
         }
     } catch (\Throwable $e) {}
 
-// Pure Plugin Barang Keluar (No fallback to generic checkout logs)
-
     $bsRecords = [];
     $bsMap = [];
 
     $extractBsFromText = function($text, $defaultDate, $defaultNote) use (&$bsMap) {
         if (empty($text)) return;
-        if (preg_match_all('/BS[-\\s]?\\d+/i', $text, $matches)) {
+        if (preg_match_all('/BS[-\s]?\d+/i', $text, $matches)) {
             foreach ($matches[0] as $codeRaw) {
                 $code = strtoupper(trim($codeRaw));
                 if (!isset($bsMap[$code])) {
@@ -1151,14 +1385,14 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
     $fahNumber = '-';
     $fahDate = '-';
     $combinedText = ($asset->name ?? '') . ' ' . ($asset->notes ?? '') . ' ' . ($asset->asset_tag ?? '');
-    if (preg_match('/No\\.?\\s*FAH[:\\s]*([^\\s|]+)/i', $combinedText, $fMatch)) {
+    if (preg_match('/No\.?\s*FAH[:\s]*([^\s|]+)/i', $combinedText, $fMatch)) {
         $fahNumber = trim($fMatch[1]);
         $fahDate = $asset->updated_at ? $asset->updated_at->format('Y-m-d') : $asset->created_at->format('Y-m-d');
     }
 
     foreach ($maintenances as $m) {
         $mText = ($m->name ?? '') . ' ' . ($m->notes ?? '');
-        if ($fahNumber === '-' && preg_match('/No\\.?\\s*FAH[:\\s]*([^\\s|]+)/i', $mText, $fMatch2)) {
+        if ($fahNumber === '-' && preg_match('/No\.?\s*FAH[:\s]*([^\s|]+)/i', $mText, $fMatch2)) {
             $fahNumber = trim($fMatch2[1]);
             $fahDate = $m->start_date ?: $fahDate;
         }
@@ -1256,6 +1490,7 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
     $firstBsDate = count($bsRecords) > 0 ? $bsRecords[0]['bs_date'] : '-';
 
     return response()->json([
+        'result_type' => 'asset',
         'asset' => [
             'id' => $asset->id,
             'name' => $asset->name ?: ($asset->model ? $asset->model->name : 'Aset Tanpa Nama'),
@@ -1283,6 +1518,7 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
             'last_action_date' => $lastActionDate,
             'last_action_type' => $lastActionType
         ],
+        'installed_components' => $installedList,
         'fah_specs' => $fahSpecs,
         'barang_keluar' => $barangKeluarList,
         'maintenances' => $maintenances,

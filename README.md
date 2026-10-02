@@ -25,14 +25,21 @@ Repository ini berisi kumpulan modul kustom, ekstensi backend (observers, listen
   - **Override & Auto-Update Profil**: Kotak kontrol manual pemilihan PT & Lokasi dengan opsi perbarui profil karyawan di database secara otomatis saat submit.
   - **Tombol Panduan Menyala Redup (*Vibrant Pulse Glow*)**: Panel diagram alur kerja visual lipat (*collapsible*) 4 tahap.
 
-### 3. 🔍 Modul Terpadu 'Track Cepat Aset IT' (v1.9.16)
-Pencarian instan yang mengonsolidasikan 5 sumber data dalam 1 tampilan terstruktur:
-1. **Data Snipe-IT**: Detail utama aset, foto visual fisik, status operasional real-time, lokasi, PT, dan PIC.
-2. **Data FAH (Form Analisa Hardware)**: Processor, RAM, Disk 1 & 2, OS, IP & MAC Address, dan status Antivirus McAfee.
-3. **Data BS (Berita Acara Kerusakan)**: Rekaman tiket kerusakan dari database portal BMKB.
-4. **Data Barang Keluar (Logistik)**: Riwayat transaksi Surat Jalan (SJ) dari database logistik.
-5. **Histori Log & Audit Trail**: Tabel interaktif native action logs dan maintenance records.
-* **Optimasi Query v1.9.16**: Prioritas pencarian Aset Aktif (`deleted_at IS NULL`), exact match, dan penanganan visual informatif untuk arsip re-create atau unit terhapus.
+### 3. 🔍 Modul Terpadu 'Track Cepat Aset IT & Komponen' (v1.9.17)
+Pencarian instan terpadu yang mengonsolidasikan data Aset Hardware dan Master Komponen dalam 1 tampilan cerdas (*Omni-Search*):
+1. **Mode Aset IT (5 Seksi + Komponen Terpasang)**:
+   - **Data Snipe-IT**: Detail utama aset, foto visual fisik, status operasional real-time, lokasi, PT, dan PIC.
+   - **Data FAH (Form Analisa Hardware)**: Processor, RAM, Disk 1 & 2, OS, IP & MAC Address, dan status Antivirus McAfee.
+   - **Seksi 2.5: 🧩 Komponen Tambahan Terpasang**: Daftar seluruh komponen RAM, SSD, HDD, dan part pengganti yang di-checkout ke unit PC/Laptop tersebut dari tabel `components_assets`.
+   - **Data BS (Berita Acara Kerusakan)**: Rekaman tiket kerusakan dari database portal BMKB.
+   - **Data Barang Keluar (Logistik)**: Riwayat transaksi Surat Jalan (SJ) dari database logistik.
+   - **Histori Log & Audit Trail**: Tabel interaktif native action logs dan maintenance records.
+2. **Mode Komponen Hardware (`COM-...` / Serial RAM / SSD)**:
+   - **Bento KPI Bar**: Total Stok, Sedang Terpasang di PC, Sisa Stok Tersedia (Ready), dan Kategori Komponen.
+   - **Tabel Master Komponen**: Nama, Serial / Kode COM, Model Number, Order/PO, Pembelian, Harga, Lokasi Gudang Simpan, Catatan, dan Tombol Link ke detail Snipe-IT.
+   - **Tabel Unit Aset Penampung**: Menampilkan seluruh PC / Laptop yang sedang menggunakan komponen tersebut lengkap dengan Tag Aset (Hyperlink), Nama PC, Status Aset, Lokasi, PIC Pengguna, Qty Dipasang, dan Tanggal Pemasangan.
+   - **Tabel Riwayat Mutasi & Audit Log Komponen**: Rekaman log transaksi checkout to asset, checkin, update, dan nama admin eksekutor.
+* **Filter Mode Switcher**: Tombol filter cepat di atas kotak pencarian (`[ 🌐 Semua (Auto-Detect) ]`, `[ 💻 Khusus Aset IT ]`, `[ 🧩 Khusus Komponen ]`).
 
 ### 4. 🔔 Notifikasi Telegram Real-Time (`@bestarimulia_bot`)
 * **Transaksi Aset**: Mengirim pesan real-time saat Aset di-*checkout* (diserahkan) atau di-*checkin* (dikembalikan).
@@ -109,6 +116,7 @@ php artisan view:clear
 Detail riwayat rilis dan catatan perubahan lengkap dapat dilihat pada berkas [CHANGELOG.md](CHANGELOG.md).
 Setiap tag rilis pada repository ini merepresentasikan milestone fungsionalitas:
 
+* **`v1.9.17`**: Modul Smart Unified Track Cepat (Dukungan Pelacakan Komponen, Bento KPI Stok, Unit Penampung, dan Relasi Dua Arah Komponen ↔ Aset).
 * **`v1.9.16`**: Optimasi query pencarian Track Cepat (prioritas Aset Aktif vs Soft-Deleted) & badge arsip re-create.
 * **`v1.9.15`**: Modul Dual-Mode *Pinjam & Kembali* (Quick Loan & Return) dengan auto-return ke Ruang Office IT.
 * **`v1.9.13`**: Perbaikan focus trap modal Bootstrap dan Select2 dropdown search.
