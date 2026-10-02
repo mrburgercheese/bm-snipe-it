@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.18] - 2026-10-02 12:55
+### Added
+- **Dukungan Pencarian Komponen Terhapus / Diarsipkan (Soft-Deleted / Trashed Components & Audit Log)**:
+  - **Pencarian Fallback ke Arsip Komponen**: Menambahkan pencarian `Component::onlyTrashed()` dan pencarian referensi log pada `action_logs` ketika kode komponen (seperti `COM-260227009`) tidak ditemukan di tabel komponen aktif.
+  - **Banner Arsip Komponen Terhapus (Visual Warning)**: Menampilkan banner peringatan arsip bernuansa peringatan oranye/merah yang mencolok jika komponen yang dicari berstatus terhapus, lengkap dengan tanggal penghapusan (`deleted_at`), peringatan status arsip, dan badge status `[ ARSIP / TRASH ]`.
+  - **Riwayat Lengkap Rekaman Komponen Terhapus**: Menampilkan seluruh data master (tipe, kategori, model no, PO, pembuat/penghapus) serta riwayat audit mutasi (waktu pembuatan dan penghapusan oleh admin) secara transparan untuk keperluan investigasi audit.
+  - **Dukungan Parameter Fleksibel**: Endpoint `/track-cepat/search` kini mendukung pembacaan parameter `query` maupun `q`.
+
 ## [1.9.17] - 2026-10-02 12:48
 ### Added
 - **Modul Smart Unified Track Cepat (Dukungan Pelacakan Komponen & Relasi Dua Arah Aset ↔ Komponen)**:

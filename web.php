@@ -887,7 +887,7 @@ Route::get('/track-cepat', function () {
 
 Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
     $prefix = DB::getTablePrefix();
-    $queryStr = trim($request->input('query', ''));
+    $queryStr = trim($request->input('query', $request->input('q', '')));
     $mode = trim($request->input('mode', 'all')); // 'all', 'asset', 'component'
 
     if (empty($queryStr)) {
@@ -900,6 +900,7 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
     // HELPER FUNCTION: SEARCH COMPONENT
     // ==========================================
     $searchComponentFn = function() use ($queryStr, $prefix) {
+        // 1. Cari Komponen Aktif (non-deleted)
         $component = App\Models\Component::with(['category', 'company', 'location'])
             ->where(function($q) use ($queryStr) {
                 $q->where('serial', $queryStr)
@@ -914,14 +915,51 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
             ->orderBy('id', 'DESC')
             ->first();
 
+        // 2. Fallback: Cari Komponen Terhapus / Diarsipkan (onlyTrashed)
+        if (!$component) {
+            $component = App\Models\Component::onlyTrashed()
+                ->with(['category', 'company', 'location'])
+                ->where(function($q) use ($queryStr) {
+                    $q->where('serial', $queryStr)
+                      ->orWhere('name', $queryStr)
+                      ->orWhere('serial', 'LIKE', "%{$queryStr}%")
+                      ->orWhere('name', 'LIKE', "%{$queryStr}%")
+                      ->orWhere('model_number', 'LIKE', "%{$queryStr}%")
+                      ->orWhere('order_number', 'LIKE', "%{$queryStr}%")
+                      ->orWhere('notes', 'LIKE', "%{$queryStr}%");
+                })
+                ->orderByRaw("CASE WHEN serial = ? THEN 0 WHEN name = ? THEN 1 ELSE 2 END", [$queryStr, $queryStr])
+                ->orderBy('id', 'DESC')
+                ->first();
+        }
+
+        // 3. Fallback: Cari via Action Logs Komponen jika ada
+        if (!$component) {
+            $compLogId = DB::table('action_logs')
+                ->where('item_type', 'App\\Models\\Component')
+                ->where(function($q) use ($queryStr) {
+                    $q->where('note', 'LIKE', "%{$queryStr}%")
+                      ->orWhere('log_meta', 'LIKE', "%{$queryStr}%");
+                })
+                ->value('item_id');
+            if ($compLogId) {
+                $component = App\Models\Component::withTrashed()
+                    ->with(['category', 'company', 'location'])
+                    ->find($compLogId);
+            }
+        }
+
         if (!$component) return null;
+
+        $isDeleted = $component->trashed();
+        $deletedAt = $isDeleted ? ($component->deleted_at ? $component->deleted_at->format('Y-m-d H:i:s') : 'Ya') : null;
 
         $totalQty = (int)$component->qty;
         $assignedQty = (int)DB::table('components_assets')->where('component_id', $component->id)->sum('assigned_qty');
         $remainingQty = max(0, $totalQty - $assignedQty);
         $minAmt = (int)$component->min_amt;
 
-        // Query unit aset yang sedang menggunakan komponen ini
+        // Query unit aset yang pernah/sedang menggunakan komponen ini
         $assignedAssets = DB::table('components_assets')
             ->join('assets', 'components_assets.asset_id', '=', 'assets.id')
             ->leftJoin('models', 'assets.model_id', '=', 'models.id')
@@ -934,11 +972,11 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
                      ->where('assets.assigned_type', '=', 'App\\Models\\User');
             })
             ->where('components_assets.component_id', $component->id)
-            ->whereNull('assets.deleted_at')
             ->select(
                 'assets.id as asset_id',
                 'assets.asset_tag',
                 'assets.name as asset_name',
+                'assets.deleted_at as asset_deleted_at',
                 'models.name as model_name',
                 'categories.name as category_name',
                 'status_labels.name as status_name',
@@ -954,14 +992,15 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
 
         $assignedList = [];
         foreach ($assignedAssets as $aa) {
+            $isAssetTrashed = !empty($aa->asset_deleted_at);
             $assignedList[] = [
                 'asset_id' => $aa->asset_id,
                 'asset_tag' => $aa->asset_tag,
                 'asset_name' => $aa->asset_name ?: ($aa->model_name ?: 'Aset Tanpa Nama'),
                 'model_name' => $aa->model_name ?: '-',
                 'category_name' => $aa->category_name ?: '-',
-                'status_name' => $aa->status_name ?: 'Tanpa Status',
-                'status_color' => $aa->status_color ?: '#999',
+                'status_name' => $isAssetTrashed ? 'Arsip / Terhapus' : ($aa->status_name ?: 'Tanpa Status'),
+                'status_color' => $isAssetTrashed ? '#d9534f' : ($aa->status_color ?: '#999'),
                 'location_name' => $aa->location_name ?: '-',
                 'company_name' => $aa->company_name ?: '-',
                 'assigned_user' => !empty(trim($aa->assigned_user)) ? trim($aa->assigned_user) : '-',
@@ -1061,6 +1100,8 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
                 'image_url' => $imageUrl,
                 'component_url' => url('components/' . $component->id),
                 'history_url' => url('components/' . $component->id . '#history'),
+                'is_deleted' => $isDeleted,
+                'deleted_at' => $deletedAt,
                 'notes' => $component->notes ?: '-'
             ],
             'assigned_assets' => $assignedList,

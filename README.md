@@ -25,7 +25,7 @@ Repository ini berisi kumpulan modul kustom, ekstensi backend (observers, listen
   - **Override & Auto-Update Profil**: Kotak kontrol manual pemilihan PT & Lokasi dengan opsi perbarui profil karyawan di database secara otomatis saat submit.
   - **Tombol Panduan Menyala Redup (*Vibrant Pulse Glow*)**: Panel diagram alur kerja visual lipat (*collapsible*) 4 tahap.
 
-### 3. 🔍 Modul Terpadu 'Track Cepat Aset IT & Komponen' (v1.9.17)
+### 3. 🔍 Modul Terpadu 'Track Cepat Aset IT & Komponen' (v1.9.18)
 Pencarian instan terpadu yang mengonsolidasikan data Aset Hardware dan Master Komponen dalam 1 tampilan cerdas (*Omni-Search*):
 1. **Mode Aset IT (5 Seksi + Komponen Terpasang)**:
    - **Data Snipe-IT**: Detail utama aset, foto visual fisik, status operasional real-time, lokasi, PT, dan PIC.
@@ -37,6 +37,7 @@ Pencarian instan terpadu yang mengonsolidasikan data Aset Hardware dan Master Ko
 2. **Mode Komponen Hardware (`COM-...` / Serial RAM / SSD)**:
    - **Bento KPI Bar**: Total Stok, Sedang Terpasang di PC, Sisa Stok Tersedia (Ready), dan Kategori Komponen.
    - **Tabel Master Komponen**: Nama, Serial / Kode COM, Model Number, Order/PO, Pembelian, Harga, Lokasi Gudang Simpan, Catatan, dan Tombol Link ke detail Snipe-IT.
+   - **Dukungan Komponen Terhapus / Diarsipkan (*Soft-Deleted / Trashed*)**: Pencarian otomatis mendeteksi komponen yang telah dihapus, menampilkan banner arsip visual berwarna oranye/merah mencolok, tanggal penghapusan, serta seluruh rekaman audit mutasi (pembuatan & penghapusan oleh admin).
    - **Tabel Unit Aset Penampung**: Menampilkan seluruh PC / Laptop yang sedang menggunakan komponen tersebut lengkap dengan Tag Aset (Hyperlink), Nama PC, Status Aset, Lokasi, PIC Pengguna, Qty Dipasang, dan Tanggal Pemasangan.
    - **Tabel Riwayat Mutasi & Audit Log Komponen**: Rekaman log transaksi checkout to asset, checkin, update, dan nama admin eksekutor.
 * **Filter Mode Switcher**: Tombol filter cepat di atas kotak pencarian (`[ 🌐 Semua (Auto-Detect) ]`, `[ 💻 Khusus Aset IT ]`, `[ 🧩 Khusus Komponen ]`).
@@ -116,6 +117,7 @@ php artisan view:clear
 Detail riwayat rilis dan catatan perubahan lengkap dapat dilihat pada berkas [CHANGELOG.md](CHANGELOG.md).
 Setiap tag rilis pada repository ini merepresentasikan milestone fungsionalitas:
 
+* **`v1.9.18`**: Dukungan Pelacakan Komponen Terhapus / Diarsipkan (Soft-Deleted / Trashed Components), banner visual arsip, dan audit mutasi lengkap.
 * **`v1.9.17`**: Modul Smart Unified Track Cepat (Dukungan Pelacakan Komponen, Bento KPI Stok, Unit Penampung, dan Relasi Dua Arah Komponen ↔ Aset).
 * **`v1.9.16`**: Optimasi query pencarian Track Cepat (prioritas Aset Aktif vs Soft-Deleted) & badge arsip re-create.
 * **`v1.9.15`**: Modul Dual-Mode *Pinjam & Kembali* (Quick Loan & Return) dengan auto-return ke Ruang Office IT.

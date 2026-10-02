@@ -242,7 +242,7 @@
         <div class="track-card">
             <div class="track-card-header">
                 <h3 class="track-card-title">
-                    <i class="fa fa-crosshairs"></i> Track Cepat Aset IT & Komponen <span class="label label-info" style="font-size: 11px; margin-left: 8px; font-weight: normal; background-color: #2980b9 !important;"><i class="fa fa-code-fork"></i> v1.9.17 &bull; Update: 2026-10-02 12:45 WIB</span>
+                    <i class="fa fa-crosshairs"></i> Track Cepat Aset IT & Komponen <span class="label label-info" style="font-size: 11px; margin-left: 8px; font-weight: normal; background-color: #2980b9 !important;"><i class="fa fa-code-fork"></i> v1.9.18 &bull; Update: 2026-10-02 12:55 WIB</span>
                 </h3>
                 <button type="button" class="btn btn-guide-modal" data-toggle="modal" data-target="#modal-panduan-track-cepat">
                     <i class="fa fa-book"></i> Panduan & Alur Kerja
@@ -490,13 +490,28 @@ $(document).ready(function() {
 
         var html = '';
 
+        // Soft Deleted Alert Banner Komponen
+        if (comp.is_deleted) {
+            html += '<div class="alert alert-warning" style="font-size: 13.5px; font-weight: 600; border-left: 5px solid #d35400; background-color: #fef9e7; color: #7d5a00; margin-bottom: 16px; border-radius: 6px; padding: 12px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">' +
+                    '<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">' +
+                    '<div><i class="fa fa-archive text-warning" style="font-size: 16px; margin-right: 6px; color: #d35400 !important;"></i>' +
+                    '<strong>REKAMAN ARSIP SISTEM (KOMPONEN):</strong> Komponen ini telah dihapus/diarsipkan pada <strong>' + (comp.deleted_at || '-') + '</strong>.' +
+                    '<div style="font-size: 12px; color: #935116; margin-top: 2px;">Menampilkan data master, alokasi unit penampung, dan riwayat mutasi stok sebelum dinonaktifkan dari sistem aktif.</div></div>' +
+                    '<span class="label label-danger" style="font-size: 11px; padding: 4px 8px;"><i class="fa fa-trash"></i> Status: Diarsipkan / Trash</span>' +
+                    '</div></div>';
+        }
+
         // Header Banner Info
+        var compHeaderBadge = comp.is_deleted 
+            ? '<span class="label label-danger" style="font-size: 11px; padding: 4px 8px;"><i class="fa fa-trash"></i> Status: Diarsipkan / Trash</span>'
+            : '<span class="label label-success" style="font-size: 11px; padding: 4px 8px;"><i class="fa fa-check-circle"></i> Tipe: Komponen Hardware</span>';
+
         html += '<div class="alert alert-info" style="font-size: 13.5px; font-weight: 600; border-left: 5px solid #27ae60; background-color: #f0fdf4; color: #166534; margin-bottom: 16px; border-radius: 6px; padding: 12px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">' +
                 '<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">' +
                 '<div><i class="fa fa-puzzle-piece" style="font-size: 18px; margin-right: 6px; color: #27ae60 !important;"></i>' +
                 '<strong>HASIL TRACKING KOMPONEN:</strong> Menampilkan spesifikasi master, alokasi unit penampung, dan riwayat mutasi stok.' +
                 '</div>' +
-                '<span class="label label-success" style="font-size: 11px; padding: 4px 8px;"><i class="fa fa-check-circle"></i> Tipe: Komponen Hardware</span>' +
+                compHeaderBadge +
                 '</div></div>';
 
         // SECTION 1: MASTER DATA & STOK KOMPONEN
@@ -527,6 +542,10 @@ $(document).ready(function() {
         html += '    </div>';
         html += '  </div>';
 
+        var trashedCompNotice = comp.is_deleted 
+            ? '<br><span class="label label-danger" style="font-size: 10px; margin-top: 4px; display: inline-block; padding: 2px 6px;"><i class="fa fa-trash"></i> Diarsipkan / Trash</span>' 
+            : '';
+
         html += '  <div class="track-card-body">';
         html += '    <div class="table-responsive">';
         html += '      <table class="track-table table-bordered table-striped">';
@@ -542,7 +561,7 @@ $(document).ready(function() {
         html += '        </thead>';
         html += '        <tbody>';
         html += '          <tr>';
-        html += '            <td><a href="' + comp.component_url + '" target="_blank" class="label label-success" style="font-size: 12px; padding: 4px 8px;" title="Buka Detail Komponen"><i class="fa fa-barcode"></i> ' + comp.serial + ' <i class="fa fa-external-link" style="font-size: 9px;"></i></a></td>';
+        html += '            <td><a href="' + comp.component_url + '" target="_blank" class="label label-success" style="font-size: 12px; padding: 4px 8px;" title="Buka Detail Komponen"><i class="fa fa-barcode"></i> ' + comp.serial + ' <i class="fa fa-external-link" style="font-size: 9px;"></i></a>' + trashedCompNotice + '</td>';
         html += '            <td>';
         html += '              <div style="display: flex; gap: 10px; align-items: center;">';
         html += '                <img src="' + comp.image_url + '" alt="Foto" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #ced4da;">';
