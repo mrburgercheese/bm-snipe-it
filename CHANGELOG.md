@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.19] - 2026-10-07 16:30
+### Added
+- **Integrasi Reverse Lookup Tabel Database Plugin Barang Rusak (BS) & Form Analisa Hardware (FAH) ke Track Cepat**:
+  - **Reverse Lookup Langsung ke Database Scrap & FAH**: Mengintegrasikan pencarian instan pada tabel WordPress `bmkb_wp_2tqty.9VlGW_bm_hw_scrap` (Barang Rusak) dan `bmkb_wp_2tqty.9VlGW_bm_hw_fah` (FAH). Memungkinkan pencarian menggunakan Kode BS (seperti `BS-0800`, `BS-0650`, `BS-0900`) maupun Nomor FAH (seperti `06//F-AH/IT-BM/07/2026`) untuk secara otomatis mengidentifikasi dan menampilkan detail aset terkait (`CAM-230613006`).
+  - **Dukungan Foto Fisik Barang Rusak (Manual BS Attachment)**: Mengakomodasi kolom gambar baru (`gambar_1`, `gambar_2`) dari tabel scrap BMKB sehingga foto kerusakan barang yang diunggah saat input manual BS tampil sebagai thumbnail interaktif pada Seksi 3 (Data BS).
+  - **Status Verifikasi Audit & Lokasi Dus**: Menampilkan label status audit terkini (`Sudah verifikasi audit` / `Belum verifikasi audit`) dan nomor penempatan kardus (`dus_no: DUS 8`) pada kartu rekaman BS.
+  - **Visualisasi Hasil Analisa Kerusakan FAH**: Seksi 2 (Data FAH) kini menampilkan rincian indikasi kerusakan, tindakan pemeriksaan, hasil analisa, serta foto fisik dari tabel FAH BMKB.
+
 ## [1.9.18] - 2026-10-02 12:55
 ### Added
 - **Dukungan Pencarian Komponen Terhapus / Diarsipkan (Soft-Deleted / Trashed Components & Audit Log)**:

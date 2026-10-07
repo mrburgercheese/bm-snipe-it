@@ -242,7 +242,7 @@
         <div class="track-card">
             <div class="track-card-header">
                 <h3 class="track-card-title">
-                    <i class="fa fa-crosshairs"></i> Track Cepat Aset IT & Komponen <span class="label label-info" style="font-size: 11px; margin-left: 8px; font-weight: normal; background-color: #2980b9 !important;"><i class="fa fa-code-fork"></i> v1.9.18 &bull; Update: 2026-10-02 12:55 WIB</span>
+                    <i class="fa fa-crosshairs"></i> Track Cepat Aset IT & Komponen <span class="label label-info" style="font-size: 11px; margin-left: 8px; font-weight: normal; background-color: #2980b9 !important;"><i class="fa fa-code-fork"></i> v1.9.19 &bull; Update: 2026-10-07 16:30 WIB</span>
                 </h3>
                 <button type="button" class="btn btn-guide-modal" data-toggle="modal" data-target="#modal-panduan-track-cepat">
                     <i class="fa fa-book"></i> Panduan & Alur Kerja
@@ -753,7 +753,7 @@ $(document).ready(function() {
         // ==========================================
         // SECTION 2: DATA DI FAH (FORM ANALISA HARDWARE)
         // ==========================================
-        var hasFahData = (fah.fah_number !== '-' || (fah.processor !== '-' && fah.processor !== '' && fah.processor !== null));
+        var hasFahData = (fah.fah_number !== '-' || (fah.processor !== '-' && fah.processor !== '' && fah.processor !== null) || fah.indikasi_kerusakan !== '-');
         var fahLinkUrl = fah.fah_url + '?search=' + encodeURIComponent(asset.asset_tag);
 
         html += '<div class="track-card">';
@@ -766,11 +766,12 @@ $(document).ready(function() {
         html += '      <table class="track-table table-bordered table-striped">';
         html += '        <thead>';
         html += '          <tr>';
-        html += '            <th style="width: 15%;">Kode Barang / Asset Tag</th>';
-        html += '            <th style="width: 18%;">Nama Barang</th>';
-        html += '            <th style="width: 17%;">No. FAH (Hyperlink)</th>';
+        html += '            <th style="width: 14%;">Kode Barang / Asset Tag</th>';
+        html += '            <th style="width: 16%;">Nama Barang & User FAH</th>';
+        html += '            <th style="width: 15%;">No. FAH (Hyperlink)</th>';
         html += '            <th style="width: 12%;">Tanggal Input FAH</th>';
-        html += '            <th style="width: 38%;">Rincian Spek Hardware</th>';
+        html += '            <th style="width: 33%;">Rincian Spek & Analisa Kerusakan</th>';
+        html += '            <th style="width: 10%; text-align: center;">Foto FAH</th>';
         html += '          </tr>';
         html += '        </thead>';
         html += '        <tbody>';
@@ -778,7 +779,9 @@ $(document).ready(function() {
         if (hasFahData) {
             html += '          <tr>';
             html += '            <td><a href="' + asset.asset_url + '" target="_blank" class="label label-primary" style="font-size: 12px; padding: 4px 8px;"><i class="fa fa-barcode"></i> ' + asset.asset_tag + ' <i class="fa fa-external-link" style="font-size: 9px;"></i></a></td>';
-            html += '            <td><strong>' + asset.name + '</strong></td>';
+            
+            var fahUserDesc = fah.nama_user_pic !== '-' ? '<br><small class="text-muted"><i class="fa fa-user"></i> PIC: ' + fah.nama_user_pic + ' (' + fah.cabang_bagian + ')</small>' : '';
+            html += '            <td><strong>' + asset.name + '</strong>' + fahUserDesc + '</td>';
             
             var fahNumberBadge = fah.fah_number !== '-' 
                 ? '<a href="' + fahLinkUrl + '" target="_blank" class="badge-fah-active" title="Klik untuk membuka Halaman Analisa Hardware FAH"><i class="fa fa-file-text"></i> ' + fah.fah_number + ' <i class="fa fa-external-link" style="font-size: 9px;"></i></a>' 
@@ -793,11 +796,24 @@ $(document).ready(function() {
             var spekSummary = '<div><i class="fa fa-microchip text-primary"></i> <strong>CPU:</strong> ' + (fah.processor || '-') + ' | <i class="fa fa-cube text-success"></i> <strong>RAM:</strong> ' + (fah.ram_jenis || '-') + ' (' + (fah.ram_kapasitas || '-') + ')</div>' +
                               '<div><i class="fa fa-hdd-o text-warning"></i> <strong>Disk:</strong> ' + (fah.disk_jenis || '-') + ' (' + (fah.disk_kapasitas || '-') + ') | <i class="fa fa-windows text-info"></i> <strong>OS:</strong> ' + (fah.os || '-') + '</div>' +
                               '<div><i class="fa fa-globe text-purple"></i> <strong>IP:</strong> <code>' + (fah.ip_address || '-') + '</code> | <strong>MAC:</strong> <code>' + (fah.mac_address || '-') + '</code> ' + mcafeeBadge + '</div>';
+            
+            if (fah.indikasi_kerusakan !== '-' || fah.hasil_pemeriksaan !== '-') {
+                spekSummary += '<div style="margin-top: 5px; padding-top: 5px; border-top: 1px dashed #ced4da; font-size: 12px; color: #b91c1c;">' +
+                               '<strong><i class="fa fa-wrench"></i> Indikasi:</strong> ' + (fah.indikasi_kerusakan || '-') + '<br>' +
+                               '<strong><i class="fa fa-check-square-o"></i> Hasil:</strong> ' + (fah.hasil_pemeriksaan || '-') + '</div>';
+            }
+
+            var fahImgCell = '<span class="text-muted">-</span>';
+            if (fah.gambar_1) {
+                fahImgCell = '<a href="' + fah.gambar_1 + '" target="_blank" title="Buka Foto FAH Resolusi Penuh"><img src="' + fah.gambar_1 + '" alt="Foto FAH" style="width: 44px; height: 44px; object-fit: cover; border-radius: 4px; border: 1px solid #ced4da; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform=\'scale(1.1)\'" onmouseout="this.style.transform=\'scale(1)\'"></a>';
+            }
+
             html += '            <td>' + spekSummary + '</td>';
+            html += '            <td style="text-align: center;">' + fahImgCell + '</td>';
             html += '          </tr>';
         } else {
             html += '          <tr>';
-            html += '            <td colspan="5" class="notice-empty-red">';
+            html += '            <td colspan="6" class="notice-empty-red">';
             html += '              <i class="fa fa-exclamation-triangle text-red"></i> BELUM ADA DATA FAH (Form Analisa Hardware)';
             html += '            </td>';
             html += '          </tr>';
@@ -865,7 +881,7 @@ $(document).ready(function() {
         var hasBsData = (bsList.length > 0 || asset.bs_code !== '-');
         
         if (bsList.length === 0 && asset.bs_code !== '-') {
-            bsList = [{ bs_code: asset.bs_code, bs_date: asset.bs_date, notes: asset.notes }];
+            bsList = [{ bs_code: asset.bs_code, bs_date: asset.bs_date, notes: asset.notes, nama_barang: asset.name, user_input: '-', status: 'Tercatat', dus_no: '-', gambar_1: null, gambar_2: null }];
         }
 
         var headerBsTitle = '3. DATA DI BS (BERITA ACARA BARANG RUSAK)';
@@ -885,11 +901,12 @@ $(document).ready(function() {
         html += '      <table class="track-table table-bordered table-striped">';
         html += '        <thead>';
         html += '          <tr>';
-        html += '            <th style="width: 15%;">Kode Barang / Asset Tag</th>';
-        html += '            <th style="width: 20%;">Nama Barang</th>';
-        html += '            <th style="width: 15%;">Kode BS (Hyperlink)</th>';
-        html += '            <th style="width: 15%;">Tanggal Input BS</th>';
-        html += '            <th style="width: 35%;">Catatan Kerusakan / Keluhan Unit</th>';
+        html += '            <th style="width: 14%;">Kode Barang / Tag</th>';
+        html += '            <th style="width: 18%;">Nama Barang</th>';
+        html += '            <th style="width: 16%;">Kode BS & Audit</th>';
+        html += '            <th style="width: 14%;">Tanggal & User Input</th>';
+        html += '            <th style="width: 28%;">Catatan Kerusakan / Keluhan</th>';
+        html += '            <th style="width: 10%; text-align: center;">Foto Fisik BS</th>';
         html += '          </tr>';
         html += '        </thead>';
         html += '        <tbody>';
@@ -899,17 +916,39 @@ $(document).ready(function() {
                 var singleBsUrl = 'https://bmkb.royalcorp.co.id/?s=' + encodeURIComponent(bItem.bs_code);
                 var bsBadge = '<a href="' + singleBsUrl + '" target="_blank" class="badge-bs-active" title="Klik untuk membuka/mencari dokumen Berita Acara ' + bItem.bs_code + ' di Portal BMKB"><i class="fa fa-ban"></i> ' + bItem.bs_code + ' <i class="fa fa-external-link" style="font-size: 9px;"></i></a>';
                 
+                var auditStatusBadge = '';
+                if (bItem.status && bItem.status !== '-') {
+                    var statusColor = (bItem.status.indexOf('Sudah') !== -1 || bItem.status.indexOf('verifikasi audit') !== -1) ? '#16a34a' : '#d97706';
+                    auditStatusBadge = '<div style="margin-top: 3px;"><span class="label" style="background-color: ' + statusColor + '; font-size: 10px; padding: 2px 5px;"><i class="fa fa-check-circle"></i> ' + bItem.status + '</span></div>';
+                }
+                if (bItem.dus_no && bItem.dus_no !== '-') {
+                    auditStatusBadge += '<div style="font-size: 11px; font-weight: 700; color: #475569; margin-top: 2px;"><i class="fa fa-archive"></i> Lokasi: ' + bItem.dus_no + '</div>';
+                }
+
+                var userDateInfo = '<div><i class="fa fa-calendar text-muted"></i> ' + (bItem.bs_date || '-') + '</div>';
+                if (bItem.user_input && bItem.user_input !== '-') {
+                    userDateInfo += '<div style="font-size: 11px; color: #64748b; margin-top: 2px;"><i class="fa fa-user"></i> PIC: <strong>' + bItem.user_input + '</strong></div>';
+                }
+
+                var bsImgCell = '<span class="text-muted">-</span>';
+                if (bItem.gambar_1) {
+                    bsImgCell = '<a href="' + bItem.gambar_1 + '" target="_blank" title="Buka Foto Barang Rusak (Klik untuk melihat ukuran penuh)"><img src="' + bItem.gambar_1 + '" alt="Foto BS" style="width: 44px; height: 44px; object-fit: cover; border-radius: 4px; border: 1px solid #ced4da; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform=\'scale(1.1)\'" onmouseout="this.style.transform=\'scale(1)\'"></a>';
+                }
+
+                var itemDisplayName = bItem.nama_barang && bItem.nama_barang !== '-' ? bItem.nama_barang : asset.name;
+
                 html += '          <tr>';
                 html += '            <td><a href="' + asset.asset_url + '" target="_blank" class="label label-primary" style="font-size: 12px; padding: 4px 8px;"><i class="fa fa-barcode"></i> ' + asset.asset_tag + ' <i class="fa fa-external-link" style="font-size: 9px;"></i></a></td>';
-                html += '            <td><strong>' + asset.name + '</strong></td>';
-                html += '            <td>' + bsBadge + '</td>';
-                html += '            <td><i class="fa fa-calendar text-muted"></i> ' + (bItem.bs_date || '-') + '</td>';
-                html += '            <td>' + (bItem.notes || '-') + '</td>';
+                html += '            <td><strong>' + itemDisplayName + '</strong></td>';
+                html += '            <td>' + bsBadge + auditStatusBadge + '</td>';
+                html += '            <td>' + userDateInfo + '</td>';
+                html += '            <td style="font-size: 12.5px; line-height: 1.4;">' + (bItem.notes || '-').replace(/\\n/g, '<br>') + '</td>';
+                html += '            <td style="text-align: center;">' + bsImgCell + '</td>';
                 html += '          </tr>';
             });
         } else {
             html += '          <tr>';
-            html += '            <td colspan="5" class="notice-empty-red">';
+            html += '            <td colspan="6" class="notice-empty-red">';
             html += '              <i class="fa fa-ban text-red"></i> BELUM ADA DATA BS (Berita Acara Barang Rusak)';
             html += '            </td>';
             html += '          </tr>';

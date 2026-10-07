@@ -1169,7 +1169,55 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
             }
         }
 
-        // 4. Pencarian via Plugin Barang Keluar pada Aset Aktif
+        // 4. Pencarian via Plugin Barang Rusak / BS (Reverse Lookup Kode BS)
+        if (!$asset) {
+            try {
+                $scrapRowsRev = DB::select(
+                    "SELECT kode_inv FROM bmkb_wp_2tqty.9VlGW_bm_hw_scrap 
+                     WHERE kode = ? OR kode LIKE ? OR keterangan LIKE ? 
+                     ORDER BY id DESC LIMIT 5", 
+                    [$queryStr, "%{$queryStr}%", "%{$queryStr}%"]
+                );
+                if (!empty($scrapRowsRev)) {
+                    $invTags = array_filter(array_column($scrapRowsRev, 'kode_inv'));
+                    if (!empty($invTags)) {
+                        $asset = App\Models\Asset::with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
+                            ->where(function($q) use ($invTags) {
+                                $q->whereIn('asset_tag', $invTags)
+                                  ->orWhereIn('serial', $invTags);
+                            })
+                            ->orderBy('id', 'DESC')
+                            ->first();
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // 5. Pencarian via Plugin Form Analisa Hardware (FAH)
+        if (!$asset) {
+            try {
+                $fahRowsRev = DB::select(
+                    "SELECT no_inventaris FROM bmkb_wp_2tqty.9VlGW_bm_hw_fah 
+                     WHERE nomor = ? OR nomor LIKE ? OR no_inventaris LIKE ? 
+                     ORDER BY id DESC LIMIT 5", 
+                    [$queryStr, "%{$queryStr}%", "%{$queryStr}%"]
+                );
+                if (!empty($fahRowsRev)) {
+                    $invTags = array_filter(array_column($fahRowsRev, 'no_inventaris'));
+                    if (!empty($invTags)) {
+                        $asset = App\Models\Asset::with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
+                            ->where(function($q) use ($invTags) {
+                                $q->whereIn('asset_tag', $invTags)
+                                  ->orWhereIn('serial', $invTags);
+                            })
+                            ->orderBy('id', 'DESC')
+                            ->first();
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // 6. Pencarian via Plugin Barang Keluar pada Aset Aktif
         if (!$asset) {
             try {
                 $pluginRowsRev = DB::select("SELECT serial FROM bmkb_wp_2tqty.bm_inv_barang_keluar WHERE no_transaksi_sistem LIKE ? OR no_transaksi_manual LIKE ? OR serial LIKE ? ORDER BY id DESC LIMIT 5", ["%{$queryStr}%", "%{$queryStr}%", "%{$queryStr}%"]);
@@ -1185,7 +1233,7 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
             } catch (\Throwable $e) {}
         }
 
-        // 5. FALLBACK: Jika tidak ditemukan di Aset Aktif sama sekali, baru cari di Aset Terhapus/Arsip (onlyTrashed)
+        // 7. FALLBACK: Jika tidak ditemukan di Aset Aktif sama sekali, baru cari di Aset Terhapus/Arsip (onlyTrashed)
         if (!$asset) {
             $asset = App\Models\Asset::onlyTrashed()
                 ->with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
@@ -1200,6 +1248,56 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
                 ->orderByRaw("CASE WHEN asset_tag = ? THEN 0 WHEN serial = ? THEN 1 ELSE 2 END", [$queryStr, $queryStr])
                 ->orderBy('id', 'DESC')
                 ->first();
+
+            // Fallback Trashed via Plugin BS
+            if (!$asset) {
+                try {
+                    $scrapRowsRev = DB::select(
+                        "SELECT kode_inv FROM bmkb_wp_2tqty.9VlGW_bm_hw_scrap 
+                         WHERE kode = ? OR kode LIKE ? OR keterangan LIKE ? 
+                         ORDER BY id DESC LIMIT 5", 
+                        [$queryStr, "%{$queryStr}%", "%{$queryStr}%"]
+                    );
+                    if (!empty($scrapRowsRev)) {
+                        $invTags = array_filter(array_column($scrapRowsRev, 'kode_inv'));
+                        if (!empty($invTags)) {
+                            $asset = App\Models\Asset::onlyTrashed()
+                                ->with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
+                                ->where(function($q) use ($invTags) {
+                                    $q->whereIn('asset_tag', $invTags)
+                                      ->orWhereIn('serial', $invTags);
+                                })
+                                ->orderBy('id', 'DESC')
+                                ->first();
+                        }
+                    }
+                } catch (\Throwable $e) {}
+            }
+
+            // Fallback Trashed via Plugin FAH
+            if (!$asset) {
+                try {
+                    $fahRowsRev = DB::select(
+                        "SELECT no_inventaris FROM bmkb_wp_2tqty.9VlGW_bm_hw_fah 
+                         WHERE nomor = ? OR nomor LIKE ? OR no_inventaris LIKE ? 
+                         ORDER BY id DESC LIMIT 5", 
+                        [$queryStr, "%{$queryStr}%", "%{$queryStr}%"]
+                    );
+                    if (!empty($fahRowsRev)) {
+                        $invTags = array_filter(array_column($fahRowsRev, 'no_inventaris'));
+                        if (!empty($invTags)) {
+                            $asset = App\Models\Asset::onlyTrashed()
+                                ->with(['model', 'model.category', 'company', 'location', 'assignedTo', 'assetstatus'])
+                                ->where(function($q) use ($invTags) {
+                                    $q->whereIn('asset_tag', $invTags)
+                                      ->orWhereIn('serial', $invTags);
+                                })
+                                ->orderBy('id', 'DESC')
+                                ->first();
+                        }
+                    }
+                } catch (\Throwable $e) {}
+            }
 
             if (!$asset) {
                 $maintAssetId = DB::table('maintenances')
@@ -1393,7 +1491,35 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
     $bsRecords = [];
     $bsMap = [];
 
-    $extractBsFromText = function($text, $defaultDate, $defaultNote) use (&$bsMap) {
+    // 1. Direct Table Lookup dari Database Plugin Barang Rusak / Scrap (9VlGW_bm_hw_scrap)
+    try {
+        $scrapDbRows = DB::select(
+            "SELECT * FROM bmkb_wp_2tqty.9VlGW_bm_hw_scrap 
+             WHERE kode_inv = ? OR kode_inv = ? OR kode_inv LIKE ? 
+             ORDER BY id DESC", 
+            [$asset->asset_tag, $asset->serial ?: $asset->asset_tag, '%' . $asset->asset_tag . '%']
+        );
+        foreach ($scrapDbRows as $sdb) {
+            $bCode = strtoupper(trim($sdb->kode));
+            if (!empty($bCode) && !isset($bsMap[$bCode])) {
+                $bDate = $sdb->tanggal_cek ?: ($sdb->tanggal_input ? date('Y-m-d', strtotime($sdb->tanggal_input)) : date('Y-m-d', strtotime($sdb->created_at)));
+                $bsMap[$bCode] = [
+                    'bs_code' => $bCode,
+                    'nama_barang' => $sdb->nama_barang ?: ($asset->name ?: '-'),
+                    'bs_date' => $bDate,
+                    'notes' => $sdb->keterangan ?: "Dokumen Berita Acara {$bCode} terkait aset ini.",
+                    'user_input' => $sdb->user_input ?: '-',
+                    'status' => $sdb->status ?: 'Tercatat',
+                    'dus_no' => $sdb->dus_no ?: '-',
+                    'gambar_1' => !empty($sdb->gambar_1) ? $sdb->gambar_1 : null,
+                    'gambar_2' => !empty($sdb->gambar_2) ? $sdb->gambar_2 : null
+                ];
+            }
+        }
+    } catch (\Throwable $e) {}
+
+    // 2. Fallback: Ekstraksi Kode BS dari Notes, Maintenance, Action Logs
+    $extractBsFromText = function($text, $defaultDate, $defaultNote) use (&$bsMap, $asset) {
         if (empty($text)) return;
         if (preg_match_all('/BS[-\s]?\d+/i', $text, $matches)) {
             foreach ($matches[0] as $codeRaw) {
@@ -1401,8 +1527,14 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
                 if (!isset($bsMap[$code])) {
                     $bsMap[$code] = [
                         'bs_code' => $code,
+                        'nama_barang' => $asset->name ?: '-',
                         'bs_date' => $defaultDate,
-                        'notes' => !empty($defaultNote) ? $defaultNote : "Dokumen Berita Acara {$code} terkait aset ini."
+                        'notes' => !empty($defaultNote) ? $defaultNote : "Dokumen Berita Acara {$code} terkait aset ini.",
+                        'user_input' => '-',
+                        'status' => 'Tercatat di Riwayat Snipe-IT',
+                        'dus_no' => '-',
+                        'gambar_1' => null,
+                        'gambar_2' => null
                     ];
                 }
             }
@@ -1423,19 +1555,55 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
 
     $bsRecords = array_values($bsMap);
 
+    // 3. Direct Table Lookup dari Database Plugin FAH (9VlGW_bm_hw_fah)
+    $fahDbRow = null;
+    try {
+        $fahRows = DB::select(
+            "SELECT * FROM bmkb_wp_2tqty.9VlGW_bm_hw_fah 
+             WHERE no_inventaris = ? OR no_inventaris = ? OR no_inventaris LIKE ? 
+             ORDER BY id DESC LIMIT 1",
+            [$asset->asset_tag, $asset->serial ?: $asset->asset_tag, '%' . $asset->asset_tag . '%']
+        );
+        if (!empty($fahRows)) {
+            $fahDbRow = $fahRows[0];
+        }
+    } catch (\Throwable $e) {}
+
     $fahNumber = '-';
     $fahDate = '-';
-    $combinedText = ($asset->name ?? '') . ' ' . ($asset->notes ?? '') . ' ' . ($asset->asset_tag ?? '');
-    if (preg_match('/No\.?\s*FAH[:\s]*([^\s|]+)/i', $combinedText, $fMatch)) {
-        $fahNumber = trim($fMatch[1]);
-        $fahDate = $asset->updated_at ? $asset->updated_at->format('Y-m-d') : $asset->created_at->format('Y-m-d');
-    }
+    $fahDasar = '-';
+    $fahIndikasi = '-';
+    $fahTindakan = '-';
+    $fahHasil = '-';
+    $fahGambar1 = null;
+    $fahGambar2 = null;
+    $fahUserPic = '-';
+    $fahCabang = '-';
 
-    foreach ($maintenances as $m) {
-        $mText = ($m->name ?? '') . ' ' . ($m->notes ?? '');
-        if ($fahNumber === '-' && preg_match('/No\.?\s*FAH[:\s]*([^\s|]+)/i', $mText, $fMatch2)) {
-            $fahNumber = trim($fMatch2[1]);
-            $fahDate = $m->start_date ?: $fahDate;
+    if ($fahDbRow) {
+        $fahNumber = $fahDbRow->nomor ?: '-';
+        $fahDate = $fahDbRow->tanggal_pemeriksaan ?: ($fahDbRow->created_at ? date('Y-m-d', strtotime($fahDbRow->created_at)) : '-');
+        $fahDasar = $fahDbRow->dasar_analisa ?: '-';
+        $fahIndikasi = $fahDbRow->indikasi_kerusakan ?: '-';
+        $fahTindakan = $fahDbRow->tindakan_pemeriksaan ?: '-';
+        $fahHasil = $fahDbRow->hasil_pemeriksaan ?: '-';
+        $fahGambar1 = !empty($fahDbRow->gambar_1) ? $fahDbRow->gambar_1 : null;
+        $fahGambar2 = !empty($fahDbRow->gambar_2) ? $fahDbRow->gambar_2 : null;
+        $fahUserPic = $fahDbRow->nama_user_pic ?: '-';
+        $fahCabang = $fahDbRow->cabang_bagian ?: '-';
+    } else {
+        $combinedText = ($asset->name ?? '') . ' ' . ($asset->notes ?? '') . ' ' . ($asset->asset_tag ?? '');
+        if (preg_match('/No\.?\s*FAH[:\s]*([^\s|]+)/i', $combinedText, $fMatch)) {
+            $fahNumber = trim($fMatch[1]);
+            $fahDate = $asset->updated_at ? $asset->updated_at->format('Y-m-d') : $asset->created_at->format('Y-m-d');
+        }
+
+        foreach ($maintenances as $m) {
+            $mText = ($m->name ?? '') . ' ' . ($m->notes ?? '');
+            if ($fahNumber === '-' && preg_match('/No\.?\s*FAH[:\s]*([^\s|]+)/i', $mText, $fMatch2)) {
+                $fahNumber = trim($fMatch2[1]);
+                $fahDate = $m->start_date ?: $fahDate;
+            }
         }
     }
 
@@ -1454,6 +1622,14 @@ Route::get('/track-cepat/search', function (Illuminate\Http\Request $request) {
         'core_vcpu' => $asset->_snipeit_core_vcpu_20 ?: '-',
         'fah_number' => $fahNumber,
         'fah_date' => $fahDate !== '-' ? $fahDate : ($asset->updated_at ? $asset->updated_at->format('Y-m-d') : '-'),
+        'dasar_analisa' => $fahDasar,
+        'indikasi_kerusakan' => $fahIndikasi,
+        'tindakan_pemeriksaan' => $fahTindakan,
+        'hasil_pemeriksaan' => $fahHasil,
+        'gambar_1' => $fahGambar1,
+        'gambar_2' => $fahGambar2,
+        'nama_user_pic' => $fahUserPic,
+        'cabang_bagian' => $fahCabang,
         'fah_url' => url('analisa/cpu-intel-noncore')
     ];
 

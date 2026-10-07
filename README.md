@@ -25,21 +25,22 @@ Repository ini berisi kumpulan modul kustom, ekstensi backend (observers, listen
   - **Override & Auto-Update Profil**: Kotak kontrol manual pemilihan PT & Lokasi dengan opsi perbarui profil karyawan di database secara otomatis saat submit.
   - **Tombol Panduan Menyala Redup (*Vibrant Pulse Glow*)**: Panel diagram alur kerja visual lipat (*collapsible*) 4 tahap.
 
-### 3. 🔍 Modul Terpadu 'Track Cepat Aset IT & Komponen' (v1.9.18)
-Pencarian instan terpadu yang mengonsolidasikan data Aset Hardware dan Master Komponen dalam 1 tampilan cerdas (*Omni-Search*):
+### 3. 🔍 Modul Terpadu 'Track Cepat Aset IT & Komponen' (v1.9.19)
+Pencarian instan terpadu yang mengonsolidasikan data Aset Hardware, Master Komponen, Form Analisa Hardware (FAH), dan Berita Acara Kerusakan (BS) dalam 1 antarmuka cerdas (*Omni-Search*):
 1. **Mode Aset IT (5 Seksi + Komponen Terpasang)**:
    - **Data Snipe-IT**: Detail utama aset, foto visual fisik, status operasional real-time, lokasi, PT, dan PIC.
-   - **Data FAH (Form Analisa Hardware)**: Processor, RAM, Disk 1 & 2, OS, IP & MAC Address, dan status Antivirus McAfee.
+   - **Data FAH (Form Analisa Hardware)**: Direct table query ke `bmkb_wp_2tqty.9VlGW_bm_hw_fah`, menampilkan indikasi kerusakan, tindakan pemeriksaan, hasil analisa, dan foto fisik unit FAH.
    - **Seksi 2.5: 🧩 Komponen Tambahan Terpasang**: Daftar seluruh komponen RAM, SSD, HDD, dan part pengganti yang di-checkout ke unit PC/Laptop tersebut dari tabel `components_assets`.
-   - **Data BS (Berita Acara Kerusakan)**: Rekaman tiket kerusakan dari database portal BMKB.
+   - **Data BS (Berita Acara Kerusakan)**: Direct table query ke `bmkb_wp_2tqty.9VlGW_bm_hw_scrap`, menampilkan kode BS, tanggal cek/input, status verifikasi audit, nomor dus penyimpanan, catatan kerusakan, dan foto fisik kerusakan barang (*attachment gambar*).
    - **Data Barang Keluar (Logistik)**: Riwayat transaksi Surat Jalan (SJ) dari database logistik.
    - **Histori Log & Audit Trail**: Tabel interaktif native action logs dan maintenance records.
-2. **Mode Komponen Hardware (`COM-...` / Serial RAM / SSD)**:
+2. **Reverse Lookup Dua Arah**:
+   - Mendukung pencarian menggunakan **Kode BS** (misal: `BS-0800`, `BS-0650`, `BS-0900`) atau **Nomor FAH** (misal: `06//F-AH/IT-BM/07/2026`) untuk secara otomatis menampilkan profil unit aset terkait (`CAM-230613006`).
+3. **Mode Komponen Hardware (`COM-...` / Serial RAM / SSD)**:
    - **Bento KPI Bar**: Total Stok, Sedang Terpasang di PC, Sisa Stok Tersedia (Ready), dan Kategori Komponen.
    - **Tabel Master Komponen**: Nama, Serial / Kode COM, Model Number, Order/PO, Pembelian, Harga, Lokasi Gudang Simpan, Catatan, dan Tombol Link ke detail Snipe-IT.
-   - **Dukungan Komponen Terhapus / Diarsipkan (*Soft-Deleted / Trashed*)**: Pencarian otomatis mendeteksi komponen yang telah dihapus, menampilkan banner arsip visual berwarna oranye/merah mencolok, tanggal penghapusan, serta seluruh rekaman audit mutasi (pembuatan & penghapusan oleh admin).
-   - **Tabel Unit Aset Penampung**: Menampilkan seluruh PC / Laptop yang sedang menggunakan komponen tersebut lengkap dengan Tag Aset (Hyperlink), Nama PC, Status Aset, Lokasi, PIC Pengguna, Qty Dipasang, dan Tanggal Pemasangan.
-   - **Tabel Riwayat Mutasi & Audit Log Komponen**: Rekaman log transaksi checkout to asset, checkin, update, dan nama admin eksekutor.
+   - **Dukungan Komponen Terhapus / Diarsipkan (*Soft-Deleted / Trashed*)**: Pencarian otomatis mendeteksi komponen yang telah dihapus, menampilkan banner arsip visual berwarna oranye/merah mencolok, tanggal penghapusan, serta seluruh rekaman audit mutasi.
+   - **Tabel Unit Aset Penampung**: Menampilkan seluruh PC / Laptop yang sedang menggunakan komponen tersebut.
 * **Filter Mode Switcher**: Tombol filter cepat di atas kotak pencarian (`[ 🌐 Semua (Auto-Detect) ]`, `[ 💻 Khusus Aset IT ]`, `[ 🧩 Khusus Komponen ]`).
 
 ### 4. 🔔 Notifikasi Telegram Real-Time (`@bestarimulia_bot`)
@@ -117,6 +118,7 @@ php artisan view:clear
 Detail riwayat rilis dan catatan perubahan lengkap dapat dilihat pada berkas [CHANGELOG.md](CHANGELOG.md).
 Setiap tag rilis pada repository ini merepresentasikan milestone fungsionalitas:
 
+* **`v1.9.19`**: Integrasi Reverse Lookup langsung ke tabel database Plugin Scrap/BS (`9VlGW_bm_hw_scrap`) dan FAH (`9VlGW_bm_hw_fah`) di Track Cepat, serta dukungan foto fisik kerusakan barang.
 * **`v1.9.18`**: Dukungan Pelacakan Komponen Terhapus / Diarsipkan (Soft-Deleted / Trashed Components), banner visual arsip, dan audit mutasi lengkap.
 * **`v1.9.17`**: Modul Smart Unified Track Cepat (Dukungan Pelacakan Komponen, Bento KPI Stok, Unit Penampung, dan Relasi Dua Arah Komponen ↔ Aset).
 * **`v1.9.16`**: Optimasi query pencarian Track Cepat (prioritas Aset Aktif vs Soft-Deleted) & badge arsip re-create.
